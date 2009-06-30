@@ -13,7 +13,9 @@
  *
  */
 
+#ifndef __i386__
 #include <asm/mach/time.h>
+#endif
 #include <linux/android_alarm.h>
 #include <linux/device.h>
 #include <linux/miscdevice.h>
@@ -320,6 +322,24 @@ static void alarm_triggered_func(void *p)
 	ANDROID_ALARM_DPRINTF(ANDROID_ALARM_PRINT_INT, "rtc alarm triggered\n");
 	wake_lock_timeout(&alarm_rtc_wake_lock, 1 * HZ);
 }
+
+#ifdef __i386__
+// Port this function from arch/arm/kernel/time.c
+/**
+* save_time_delta - Save the offset between system time and RTC time
+* @delta: pointer to timespec to store delta
+* @rtc: pointer to timespec for current RTC time
+*
+* Return a delta between the system time and the RTC time, such
+* that system time can be restored later with restore_time_delta()
+*/
+static void save_time_delta(struct timespec *delta, struct timespec *rtc)
+{
+        set_normalized_timespec(delta,
+			xtime.tv_sec - rtc->tv_sec,
+			xtime.tv_nsec - rtc->tv_nsec);
+}
+#endif
 
 int alarm_suspend(struct platform_device *pdev, pm_message_t state)
 {
