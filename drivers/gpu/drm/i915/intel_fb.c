@@ -445,9 +445,14 @@ static int intelfb_create(struct drm_device *dev, uint32_t fb_width,
 	mode_cmd.width = surface_width;
 	mode_cmd.height = surface_height;
 
+#if CONFIG_DRM_I915_COLOR_DEPTH == 16
+	mode_cmd.bpp = mode_cmd.depth = 16;
+	mode_cmd.pitch = ALIGN(mode_cmd.width * ((mode_cmd.bpp + 1) / 8), 64);
+#else
 	mode_cmd.bpp = 32;
 	mode_cmd.pitch = ALIGN(mode_cmd.width * ((mode_cmd.bpp + 1) / 8), 64);
 	mode_cmd.depth = 24;
+#endif
 
 	size = mode_cmd.pitch * mode_cmd.height;
 	size = ALIGN(size, PAGE_SIZE);

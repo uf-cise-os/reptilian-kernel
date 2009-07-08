@@ -90,6 +90,14 @@ config DRM_I915_KMS
 	  the driver to bind to PCI devices, which precludes loading things
 	  like intelfb.
 
+config DRM_I915_COLOR_DEPTH
+	int "I915 driver color depth"
+	depends on DRM_I915
+	range 16 32
+	default 16
+	help
+	  Set the color depth of i915 driver (16 or 32).
+
 endchoice
 
 config DRM_MGA
