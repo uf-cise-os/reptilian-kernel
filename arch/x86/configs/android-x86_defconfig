@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.29
-# Mon Jul 13 16:28:54 2009
+# Tue Jul 14 16:27:31 2009
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -674,7 +674,7 @@ CONFIG_ATA=y
 # CONFIG_ATA_NONSTANDARD is not set
 CONFIG_ATA_ACPI=y
 CONFIG_SATA_PMP=y
-# CONFIG_SATA_AHCI is not set
+CONFIG_SATA_AHCI=y
 # CONFIG_SATA_SIL24 is not set
 CONFIG_ATA_SFF=y
 # CONFIG_SATA_SVW is not set
