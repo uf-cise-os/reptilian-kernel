@@ -62,6 +62,7 @@ static int synaptics_mode_cmd(struct psmouse *psmouse, unsigned char mode)
 
 int synaptics_detect(struct psmouse *psmouse, int set_properties)
 {
+#ifdef CONFIG_MOUSE_PS2_SYNAPTICS
 	struct ps2dev *ps2dev = &psmouse->ps2dev;
 	unsigned char param[4];
 
@@ -82,6 +83,9 @@ int synaptics_detect(struct psmouse *psmouse, int set_properties)
 	}
 
 	return 0;
+#else
+	return -ENODEV;
+#endif
 }
 
 void synaptics_reset(struct psmouse *psmouse)
