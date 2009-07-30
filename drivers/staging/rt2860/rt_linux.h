@@ -91,12 +91,12 @@ typedef int (*HARD_START_XMIT_FUNC)(struct sk_buff *skb, struct net_device *net_
 
 #ifdef CONFIG_STA_SUPPORT
 #ifdef RT2860
-#define STA_PROFILE_PATH			"/etc/Wireless/RT2860STA/RT2860STA.dat"
-#define STA_RTMP_FIRMWARE_FILE_NAME "/etc/Wireless/RT2860STA/RT2860STA.bin"
+#define STA_PROFILE_PATH			"/system/lib/firmware/RT2860STA/RT2860STA.dat"
+#define STA_RTMP_FIRMWARE_FILE_NAME		"/system/lib/firmware/RT2860STA/RT2860STA.bin"
 #define STA_NIC_DEVICE_NAME			"RT2860STA"
 #define STA_DRIVER_VERSION			"1.8.0.0"
 #ifdef MULTIPLE_CARD_SUPPORT
-#define CARD_INFO_PATH			"/etc/Wireless/RT2860STA/RT2860STACard.dat"
+#define CARD_INFO_PATH				"/system/lib/firmware/RT2860STA/RT2860STACard.dat"
 #endif // MULTIPLE_CARD_SUPPORT //
 #endif // RT2860 //
 
