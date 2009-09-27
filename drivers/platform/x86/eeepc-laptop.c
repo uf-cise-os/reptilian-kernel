@@ -862,7 +862,7 @@ static int eeepc_hotk_add(struct acpi_device *device)
 	status = acpi_install_notify_handler(ehotk->handle, ACPI_SYSTEM_NOTIFY,
 					     eeepc_hotk_notify, ehotk);
 	if (ACPI_FAILURE(status))
-		printk(EEEPC_ERR "Error installing notify handler\n");
+		pr_err("Error installing notify handler\n");
 
 	eeepc_register_rfkill_notifier("\\_SB.PCI0.P0P6");
 	eeepc_register_rfkill_notifier("\\_SB.PCI0.P0P7");
@@ -939,7 +939,7 @@ static int eeepc_hotk_remove(struct acpi_device *device, int type)
 	status = acpi_remove_notify_handler(ehotk->handle, ACPI_SYSTEM_NOTIFY,
 					    eeepc_hotk_notify);
 	if (ACPI_FAILURE(status))
-		printk(EEEPC_ERR "Error removing notify handler\n");
+		pr_err("Error removing notify handler\n");
 
 	eeepc_unregister_rfkill_notifier("\\_SB.PCI0.P0P6");
 	eeepc_unregister_rfkill_notifier("\\_SB.PCI0.P0P7");
