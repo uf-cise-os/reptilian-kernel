@@ -331,6 +331,15 @@ static int eeepc_rfkill_state(void *data, enum rfkill_state *state)
 }
 
 
+static void __init eeepc_enable_camera(void)
+{
+	/*
+	 * If the following call to set_acpi() fails, it's because there's no
+	 * camera so we can ignore the error.
+	 */
+	set_acpi(CM_ASL_CAMERA, 1);
+}
+
 /*
  * Sys helpers
  */
@@ -1023,6 +1032,9 @@ static int __init eeepc_laptop_init(void)
 	result = eeepc_hwmon_init(dev);
 	if (result)
 		goto fail_hwmon;
+
+	eeepc_enable_camera();
+
 	/* Register platform stuff */
 	result = platform_driver_register(&platform_driver);
 	if (result)
