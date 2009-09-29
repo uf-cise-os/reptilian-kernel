@@ -142,6 +142,7 @@ struct eeepc_hotk {
 	struct rfkill *wlan_rfkill;
 	struct rfkill *bluetooth_rfkill;
 	struct rfkill *wwan3g_rfkill;
+	struct rfkill *wimax_rfkill;
 	struct hotplug_slot *hotplug_slot;
 	struct mutex hotplug_lock;
 };
@@ -861,6 +862,10 @@ static int eeepc_hotk_restore(struct device *device)
 		rfkill_force_state(ehotk->wwan3g_rfkill,
 				   get_acpi(CM_ASL_3G) != 1);
 
+	if (ehotk->wimax_rfkill)
+		rfkill_force_state(ehotk->wimax_rfkill,
+				   get_acpi(CM_ASL_WIMAX) != 1);
+
 	return 0;
 }
 
@@ -998,6 +1003,8 @@ static void eeepc_rfkill_exit(void)
 		rfkill_unregister(ehotk->bluetooth_rfkill);
 	if (ehotk->wwan3g_rfkill)
 		rfkill_unregister(ehotk->wwan3g_rfkill);
+	if (ehotk->wimax_rfkill)
+		rfkill_unregister(ehotk->wimax_rfkill);
 }
 
 static void eeepc_input_exit(void)
@@ -1089,6 +1096,13 @@ static int eeepc_rfkill_init(struct device *dev)
 	result = eeepc_new_rfkill(&ehotk->wwan3g_rfkill,
 				  "eeepc-wwan3g", dev,
 				  RFKILL_TYPE_WWAN, CM_ASL_3G);
+
+	if (result && result != -ENODEV)
+		goto exit;
+
+	result = eeepc_new_rfkill(&ehotk->wimax_rfkill,
+				  "eeepc-wimax", dev,
+				  RFKILL_TYPE_WIMAX, CM_ASL_WIMAX);
 
 	if (result && result != -ENODEV)
 		goto exit;
