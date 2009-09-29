@@ -1208,7 +1208,7 @@ static int eeepc_hotk_add(struct acpi_device *device)
 	int result;
 
 	if (!device)
-		 return -EINVAL;
+		return -EINVAL;
 	pr_notice(EEEPC_HOTK_NAME "\n");
 	ehotk = kzalloc(sizeof(struct eeepc_hotk), GFP_KERNEL);
 	if (!ehotk)
@@ -1297,7 +1297,7 @@ static int eeepc_hotk_remove(struct acpi_device *device, int type)
 	acpi_status status;
 
 	if (!device || !acpi_driver_data(device))
-		 return -EINVAL;
+		return -EINVAL;
 
 	eeepc_backlight_exit();
 	eeepc_rfkill_exit();
