@@ -143,7 +143,7 @@ struct eeepc_hotk {
 	struct rfkill *bluetooth_rfkill;
 	struct rfkill *wwan3g_rfkill;
 	struct hotplug_slot *hotplug_slot;
-	struct work_struct hotplug_work;
+	struct mutex hotplug_lock;
 };
 
 /* The actual device the driver binds to */
@@ -665,7 +665,7 @@ static int eeepc_get_adapter_status(struct hotplug_slot *hotplug_slot,
 	return 0;
 }
 
-static void eeepc_hotplug_work(struct work_struct *work)
+static void eeepc_rfkill_hotplug(void)
 {
 	struct pci_dev *dev;
 	struct pci_bus *bus;
@@ -673,13 +673,15 @@ static void eeepc_hotplug_work(struct work_struct *work)
 
 	rfkill_force_state(ehotk->wlan_rfkill, blocked);
 
+	mutex_lock(&ehotk->hotplug_lock);
+
 	if (ehotk->hotplug_slot == NULL)
-		return;
+		goto out_unlock;
 
 	bus = pci_find_bus(0, 1);
 	if (!bus) {
 		pr_warning("Unable to find PCI bus 1?\n");
-		return;
+		goto out_unlock;
 	}
 
 	if (!blocked) {
@@ -687,7 +689,7 @@ static void eeepc_hotplug_work(struct work_struct *work)
 		if (dev) {
 			/* Device already present */
 			pci_dev_put(dev);
-			return;
+			goto out_unlock;
 		}
 		dev = pci_scan_single_device(bus, 0);
 		if (dev) {
@@ -702,6 +704,9 @@ static void eeepc_hotplug_work(struct work_struct *work)
 			pci_dev_put(dev);
 		}
 	}
+
+out_unlock:
+	mutex_unlock(&ehotk->hotplug_lock);
 }
 
 static void eeepc_rfkill_notify(acpi_handle handle, u32 event, void *data)
@@ -709,7 +714,7 @@ static void eeepc_rfkill_notify(acpi_handle handle, u32 event, void *data)
 	if (event != ACPI_NOTIFY_BUS_CHECK)
 		return;
 
-	schedule_work(&ehotk->hotplug_work);
+	eeepc_rfkill_hotplug();
 }
 
 static void eeepc_hotk_notify(acpi_handle handle, u32 event, void *data)
@@ -910,7 +915,7 @@ static int eeepc_hotk_resume(struct acpi_device *device)
 		rfkill_force_state(ehotk->wlan_rfkill,
 				   wlan != 1);
 
-		schedule_work(&ehotk->hotplug_work);
+		eeepc_rfkill_hotplug();
 	}
 
 	if (ehotk->bluetooth_rfkill)
@@ -1131,7 +1136,7 @@ static int eeepc_rfkill_init(struct device *dev)
 {
 	int result = 0;
 
-	INIT_WORK(&ehotk->hotplug_work, eeepc_hotplug_work);
+	mutex_init(&ehotk->hotplug_lock);
 
 	eeepc_register_rfkill_notifier("\\_SB.PCI0.P0P6");
 	eeepc_register_rfkill_notifier("\\_SB.PCI0.P0P7");
