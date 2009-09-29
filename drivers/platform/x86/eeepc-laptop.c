@@ -845,6 +845,10 @@ static int eeepc_hotk_resume(struct acpi_device *device)
 		rfkill_force_state(ehotk->bluetooth_rfkill,
 				   get_acpi(CM_ASL_BLUETOOTH) != 1);
 
+	if (ehotk->wwan3g_rfkill)
+		rfkill_force_state(ehotk->wwan3g_rfkill,
+				   get_acpi(CM_ASL_3G) != 1);
+
 	return 0;
 }
 
