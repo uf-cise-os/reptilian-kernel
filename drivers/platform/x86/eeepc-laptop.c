@@ -361,7 +361,7 @@ static int eeepc_rfkill_state(void *data, enum rfkill_state *state)
 }
 
 
-static void __init eeepc_enable_camera(void)
+static void __devinit eeepc_enable_camera(void)
 {
 	/*
 	 * If the following call to set_acpi() fails, it's because there's no
@@ -1269,7 +1269,7 @@ static int eeepc_led_init(struct device *dev)
 	return 0;
 }
 
-static int eeepc_hotk_add(struct acpi_device *device)
+static int __devinit eeepc_hotk_add(struct acpi_device *device)
 {
 	acpi_status status;
 	struct device *dev;
