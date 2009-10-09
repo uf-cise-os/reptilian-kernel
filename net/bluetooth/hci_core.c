@@ -39,6 +39,7 @@
 #include <linux/skbuff.h>
 #include <linux/interrupt.h>
 #include <linux/notifier.h>
+#include <linux/rfkill.h>
 #include <net/sock.h>
 
 #include <asm/system.h>
@@ -476,6 +477,13 @@ int hci_dev_open(__u16 dev)
 
 	hci_req_lock(hdev);
 
+	if (hdev->rfkill &&
+	    (hdev->rfkill->state == RFKILL_STATE_HARD_BLOCKED ||
+	     hdev->rfkill->state == RFKILL_STATE_SOFT_BLOCKED)) {
+		ret = -EBUSY;
+		goto done;
+	}
+
 	if (test_bit(HCI_UP, &hdev->flags)) {
 		ret = -EALREADY;
 		goto done;
@@ -813,6 +821,21 @@ int hci_get_dev_info(void __user *arg)
 
 /* ---- Interface to HCI drivers ---- */
 
+static int hci_rfkill_set_block(void *data, enum rfkill_state state)
+{
+	struct hci_dev *hdev = data;
+	bool blocked = !(state == RFKILL_STATE_UNBLOCKED);
+
+	BT_DBG("%p name %s blocked %d", hdev, hdev->name, blocked);
+
+	if (!blocked)
+		return 0;
+
+	hci_dev_do_close(hdev);
+
+	return 0;
+}
+
 /* Alloc HCI device */
 struct hci_dev *hci_alloc_dev(void)
 {
@@ -844,7 +867,8 @@ int hci_register_dev(struct hci_dev *hdev)
 	struct list_head *head = &hci_dev_list, *p;
 	int i, id = 0;
 
-	BT_DBG("%p name %s type %d owner %p", hdev, hdev->name, hdev->type, hdev->owner);
+	BT_DBG("%p name %s type %d owner %p", hdev, hdev->name,
+						hdev->type, hdev->owner);
 
 	if (!hdev->open || !hdev->close || !hdev->destruct)
 		return -EINVAL;
@@ -900,6 +924,17 @@ int hci_register_dev(struct hci_dev *hdev)
 
 	hci_register_sysfs(hdev);
 
+	hdev->rfkill = rfkill_allocate(&hdev->dev, RFKILL_TYPE_BLUETOOTH);
+	if (hdev->rfkill) {
+		hdev->rfkill->name = hdev->name;
+		hdev->rfkill->toggle_radio = hci_rfkill_set_block;
+		hdev->rfkill->data = hdev;
+		if (rfkill_register(hdev->rfkill) < 0) {
+			rfkill_free(hdev->rfkill);
+			hdev->rfkill = NULL;
+		}
+	}
+
 	hci_notify(hdev, HCI_DEV_REG);
 
 	return id;
@@ -923,6 +958,10 @@ int hci_unregister_dev(struct hci_dev *hdev)
 		kfree_skb(hdev->reassembly[i]);
 
 	hci_notify(hdev, HCI_DEV_UNREG);
+
+	if (hdev->rfkill) {
+		rfkill_unregister(hdev->rfkill);
+	}
 
 	hci_unregister_sysfs(hdev);
 
