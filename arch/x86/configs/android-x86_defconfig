@@ -430,7 +430,7 @@ CONFIG_ISA=y
 # CONFIG_SCx200 is not set
 # CONFIG_OLPC is not set
 # CONFIG_PCCARD is not set
-# CONFIG_HOTPLUG_PCI is not set
+CONFIG_HOTPLUG_PCI=y
 
 #
 # Executable file formats / Emulations
