@@ -1088,6 +1088,7 @@ static struct rfkill *eeepc_rfkill_alloc(const char *name,
 	rfkill->name = name;
 	rfkill->toggle_radio = eeepc_rfkill_set;
 	rfkill->get_state = eeepc_rfkill_state;
+	rfkill->data = (void *)(unsigned long)asl;
 	if (get_acpi(asl) == 1) {
 		rfkill->state = RFKILL_STATE_UNBLOCKED;
 		rfkill_set_default(type, RFKILL_STATE_UNBLOCKED);
