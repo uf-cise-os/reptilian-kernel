@@ -694,7 +694,7 @@ static void eeepc_rfkill_hotplug(void)
 	bool blocked = eeepc_wlan_rfkill_blocked();
 
 	if (ehotk->wlan_rfkill)
-		rfkill_force_state(ehotk->wlan_rfkill, blocked);
+		rfkill_force_state(ehotk->wlan_rfkill, !blocked);
 
 	mutex_lock(&ehotk->hotplug_lock);
 
