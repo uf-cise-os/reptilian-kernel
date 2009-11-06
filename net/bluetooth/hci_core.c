@@ -477,9 +477,7 @@ int hci_dev_open(__u16 dev)
 
 	hci_req_lock(hdev);
 
-	if (hdev->rfkill &&
-	    (hdev->rfkill->state == RFKILL_STATE_HARD_BLOCKED ||
-	     hdev->rfkill->state == RFKILL_STATE_SOFT_BLOCKED)) {
+	if (hdev->rfkill && hdev->rfkill->state == RFKILL_STATE_HARD_BLOCKED) {
 		ret = -EBUSY;
 		goto done;
 	}
