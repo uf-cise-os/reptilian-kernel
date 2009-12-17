@@ -23,6 +23,8 @@ enum {
 	ask_all,
 	ask_new,
 	ask_silent,
+	dont_ask,
+	dont_ask_dont_tell,
 	set_default,
 	set_yes,
 	set_mod,
@@ -39,6 +41,8 @@ static char line[128];
 static struct menu *rootEntry;
 
 static char nohelp_text[] = N_("Sorry, no help available for this option yet.\n");
+
+static int return_value = 0;
 
 static const char *get_help(struct menu *menu)
 {
@@ -360,7 +364,10 @@ static void conf(struct menu *menu)
 
 		switch (prop->type) {
 		case P_MENU:
-			if (input_mode == ask_silent && rootEntry != menu) {
+			if ((input_mode == ask_silent ||
+			     input_mode == dont_ask ||
+			     input_mode == dont_ask_dont_tell) &&
+			    rootEntry != menu) {
 				check_conf(menu);
 				return;
 			}
@@ -418,11 +425,20 @@ static void check_conf(struct menu *menu)
 	if (sym && !sym_has_value(sym)) {
 		if (sym_is_changable(sym) ||
 		    (sym_is_choice(sym) && sym_get_tristate_value(sym) == yes)) {
+			if (input_mode == dont_ask ||
+			    input_mode == dont_ask_dont_tell) {
+				if (input_mode == dont_ask &&
+				    sym->name && !sym_is_choice_value(sym)) {
+					fprintf(stderr,"CONFIG_%s\n",sym->name);
+					++return_value;
+				}
+			} else {
 			if (!conf_cnt++)
 				printf(_("*\n* Restart config...\n*\n"));
 			rootEntry = menu_get_parent_menu(menu);
 			conf(rootEntry);
 		}
+	}
 	}
 
 	for (child = menu->list; child; child = child->next)
@@ -439,7 +455,7 @@ int main(int ac, char **av)
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
 
-	while ((opt = getopt(ac, av, "osdD:nmyrh")) != -1) {
+	while ((opt = getopt(ac, av, "osbBdD:nmyrh")) != -1) {
 		switch (opt) {
 		case 'o':
 			input_mode = ask_silent;
@@ -447,6 +463,12 @@ int main(int ac, char **av)
 		case 's':
 			input_mode = ask_silent;
 			sync_kconfig = 1;
+			break;
+		case 'b':
+			input_mode = dont_ask;
+			break;
+		case 'B':
+			input_mode = dont_ask_dont_tell;
 			break;
 		case 'd':
 			input_mode = set_default;
@@ -524,6 +546,8 @@ int main(int ac, char **av)
 	case ask_silent:
 	case ask_all:
 	case ask_new:
+	case dont_ask:
+	case dont_ask_dont_tell:
 		conf_read(NULL);
 		break;
 	case set_no:
@@ -585,12 +609,16 @@ int main(int ac, char **av)
 		conf(&rootmenu);
 		input_mode = ask_silent;
 		/* fall through */
+	case dont_ask:
+	case dont_ask_dont_tell:
 	case ask_silent:
 		/* Update until a loop caused no more changes */
 		do {
 			conf_cnt = 0;
 			check_conf(&rootmenu);
-		} while (conf_cnt);
+		} while (conf_cnt &&
+			 (input_mode != dont_ask &&
+			  input_mode != dont_ask_dont_tell));
 		break;
 	}
 
@@ -612,5 +640,5 @@ int main(int ac, char **av)
 			exit(1);
 		}
 	}
-	return 0;
+	return return_value;
 }
