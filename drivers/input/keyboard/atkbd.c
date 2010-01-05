@@ -63,8 +63,6 @@ static int atkbd_extra;
 module_param_named(extra, atkbd_extra, bool, 0);
 MODULE_PARM_DESC(extra, "Enable extra LEDs and keys on IBM RapidAcces, EzKey and similar keyboards");
 
-static unsigned int driver_init_done = 0;
-
 struct pending_key {
 	struct list_head list;
 	unsigned int     flags;
@@ -233,6 +231,7 @@ struct atkbd {
 	unsigned long event_jiffies;
 	struct mutex event_mutex;
 	unsigned long event_mask;
+	unsigned int driver_init_done;
 	struct list_head pending_key_list;
 };
 
@@ -394,7 +393,7 @@ static irqreturn_t atkbd_interrupt(struct serio *serio, unsigned char data,
 			goto out;
 
 	if (!atkbd->enabled) {
-		if (driver_init_done) {
+		if (atkbd->driver_init_done) {
 			struct pending_key *key = kmalloc(sizeof(struct pending_key),
 					GFP_ATOMIC);
 			if (key) {
@@ -656,7 +655,7 @@ static inline void atkbd_enable(struct atkbd *atkbd)
 	serio_pause_rx(atkbd->ps2dev.serio);
 	atkbd->enabled = 1;
 
-	if (driver_init_done) {
+	if (atkbd->driver_init_done) {
 		struct pending_key *pos,*n;
 		list_for_each_entry_safe(pos, n, &atkbd->pending_key_list, list) {
 			atkbd_interrupt(atkbd->ps2dev.serio, pos->data, pos->flags);
@@ -852,6 +851,7 @@ static void atkbd_cleanup(struct serio *serio)
 static void atkbd_disconnect(struct serio *serio)
 {
 	struct atkbd *atkbd = serio_get_drvdata(serio);
+	struct pending_key *pos,*n;
 
 	atkbd_disable(atkbd);
 
@@ -862,6 +862,10 @@ static void atkbd_disconnect(struct serio *serio)
 	input_unregister_device(atkbd->dev);
 	serio_close(serio);
 	serio_set_drvdata(serio, NULL);
+	list_for_each_entry_safe(pos, n, &atkbd->pending_key_list, list) {
+		list_del(&pos->list);
+		kfree(pos);
+	}
 	kfree(atkbd);
 }
 
@@ -1143,7 +1147,7 @@ static int atkbd_connect(struct serio *serio, struct serio_driver *drv)
 	err = input_register_device(atkbd->dev);
 	if (err)
 		goto fail4;
-	driver_init_done = 1;
+	atkbd->driver_init_done = 1;
 	return 0;
 
  fail4: sysfs_remove_group(&serio->dev.kobj, &atkbd_attribute_group);
