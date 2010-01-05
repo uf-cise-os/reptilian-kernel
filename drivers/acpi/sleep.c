@@ -127,7 +127,6 @@ static int acpi_pm_prepare(void)
 	return error;
 }
 
-extern void request_suspend_state(int);
 /**
  *	acpi_pm_finish - Instruct the platform to leave a sleep state.
  *
@@ -145,8 +144,6 @@ static void acpi_pm_finish(void)
 		acpi_state);
 	acpi_disable_wakeup_device(acpi_state);
 	acpi_leave_sleep_state(acpi_state);
-	if (acpi_state == ACPI_STATE_S3)
-		request_suspend_state(0);
 
 	/* reset firmware waking vector */
 	acpi_set_firmware_waking_vector((acpi_physical_address) 0);
