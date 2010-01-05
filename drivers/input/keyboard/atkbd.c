@@ -63,6 +63,13 @@ static bool atkbd_extra;
 module_param_named(extra, atkbd_extra, bool, 0);
 MODULE_PARM_DESC(extra, "Enable extra LEDs and keys on IBM RapidAcces, EzKey and similar keyboards");
 
+struct pending_key {
+	struct list_head list;
+	unsigned int     flags;
+	unsigned char    data;
+};
+
+
 /*
  * Scancode to keycode tables. These are just the default setting, and
  * are loadable via a userland utility.
@@ -229,6 +236,9 @@ struct atkbd {
 
 	/* Serializes reconnect(), attr->set() and event work */
 	struct mutex mutex;
+
+	unsigned int driver_init_done;
+	struct list_head pending_key_list;
 };
 
 /*
@@ -390,8 +400,20 @@ static irqreturn_t atkbd_interrupt(struct serio *serio, unsigned char data,
 		if  (ps2_handle_response(&atkbd->ps2dev, data))
 			goto out;
 
-	if (!atkbd->enabled)
+	if (!atkbd->enabled) {
+		if (atkbd->driver_init_done) {
+			struct pending_key *key = kmalloc(sizeof(struct pending_key),
+					GFP_ATOMIC);
+			if (key) {
+				INIT_LIST_HEAD(&key->list);
+				key->flags = flags;
+				key->data = data;
+				list_add_tail(&key->list, &atkbd->pending_key_list);
+			}
+
+		}
 		goto out;
+	}
 
 	input_event(dev, EV_MSC, MSC_RAW, code);
 
@@ -656,6 +678,16 @@ static inline void atkbd_enable(struct atkbd *atkbd)
 {
 	serio_pause_rx(atkbd->ps2dev.serio);
 	atkbd->enabled = true;
+
+	if (atkbd->driver_init_done) {
+		struct pending_key *pos,*n;
+		list_for_each_entry_safe(pos, n, &atkbd->pending_key_list, list) {
+			atkbd_interrupt(atkbd->ps2dev.serio, pos->data, pos->flags);
+			list_del(&pos->list);
+			kfree(pos);
+		}
+	}
+
 	serio_continue_rx(atkbd->ps2dev.serio);
 }
 
@@ -854,6 +886,7 @@ static void atkbd_cleanup(struct serio *serio)
 static void atkbd_disconnect(struct serio *serio)
 {
 	struct atkbd *atkbd = serio_get_drvdata(serio);
+	struct pending_key *pos,*n;
 
 	sysfs_remove_group(&serio->dev.kobj, &atkbd_attribute_group);
 
@@ -871,6 +904,10 @@ static void atkbd_disconnect(struct serio *serio)
 
 	serio_close(serio);
 	serio_set_drvdata(serio, NULL);
+	list_for_each_entry_safe(pos, n, &atkbd->pending_key_list, list) {
+		list_del(&pos->list);
+		kfree(pos);
+	}
 	kfree(atkbd);
 }
 
@@ -1153,13 +1190,12 @@ static int atkbd_connect(struct serio *serio, struct serio_driver *drv)
 	err = sysfs_create_group(&serio->dev.kobj, &atkbd_attribute_group);
 	if (err)
 		goto fail3;
-
+	INIT_LIST_HEAD(&atkbd->pending_key_list);
 	atkbd_enable(atkbd);
-
 	err = input_register_device(atkbd->dev);
 	if (err)
 		goto fail4;
-
+	atkbd->driver_init_done = 1;
 	return 0;
 
  fail4: sysfs_remove_group(&serio->dev.kobj, &atkbd_attribute_group);
