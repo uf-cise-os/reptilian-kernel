@@ -33,6 +33,12 @@ silentoldconfig: $(obj)/conf
 	$(Q)mkdir -p include/generated
 	$< -s $(Kconfig)
 
+nonint_oldconfig: $(obj)/conf
+	$< -b $(Kconfig)
+
+loose_nonint_oldconfig: $(obj)/conf
+	$< -B $(Kconfig)
+
 # if no path is given, then use src directory to find file
 ifdef LSMOD
 LSMOD_F := $(LSMOD)
