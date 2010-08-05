@@ -1211,6 +1211,8 @@ struct lbs_private *lbs_add_card(void *card, struct device *dmdev)
 	dev->flags |= IFF_BROADCAST | IFF_MULTICAST;
 	dev->set_multicast_list = lbs_set_multicast_list;
 
+	strcpy(dev->name, "wlan%d");	/* rename the device? */
+
 	SET_NETDEV_DEV(dev, dmdev);
 
 	priv->rtap_net_dev = NULL;
