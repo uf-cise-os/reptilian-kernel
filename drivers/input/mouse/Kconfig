@@ -117,6 +117,15 @@ config MOUSE_PS2_TOUCHKIT
 
 	  If unsure, say N.
 
+config MOUSE_PS2_EZEX
+    bool "Ezex PS/2 protocol extension"
+    depends on MOUSE_PS2
+    help
+      Say Y here if you have an Ezex
+      connected to your system.
+
+      If unsure, say N.
+
 config MOUSE_PS2_OLPC
 	bool "OLPC PS/2 mouse protocol extension"
 	depends on MOUSE_PS2 && OLPC

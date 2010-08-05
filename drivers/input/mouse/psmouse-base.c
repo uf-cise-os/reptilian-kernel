@@ -30,6 +30,7 @@
 #include "trackpoint.h"
 #include "touchkit_ps2.h"
 #include "elantech.h"
+#include "ezex_ps2.h"
 
 #define DRIVER_DESC	"PS/2 mouse driver"
 
@@ -676,6 +677,9 @@ static int psmouse_extensions(struct psmouse *psmouse,
 
 		if (touchkit_ps2_detect(psmouse, set_properties) == 0)
 			return PSMOUSE_TOUCHKIT_PS2;
+
+		if (ezex_ps2_detect(psmouse, set_properties) == 0)
+			return PSMOUSE_EZEX_PS2;
 	}
 
 /*
@@ -793,6 +797,14 @@ static const struct psmouse_protocol psmouse_protocols[] = {
 		.name		= "touchkitPS/2",
 		.alias		= "touchkit",
 		.detect		= touchkit_ps2_detect,
+	},
+#endif
+#ifdef CONFIG_MOUSE_PS2_EZEX
+	{
+		.type       = PSMOUSE_EZEX_PS2,
+		.name       = "EzexPS/2",
+		.alias      = "ezex",
+		.detect     = ezex_ps2_detect,
 	},
 #endif
 #ifdef CONFIG_MOUSE_PS2_OLPC
@@ -1164,10 +1176,12 @@ static int psmouse_switch_protocol(struct psmouse *psmouse, const struct psmouse
 
 	input_dev->dev.parent = &psmouse->ps2dev.serio->dev;
 
+#ifndef CONFIG_MOUSE_PS2_EZEX
 	input_dev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_REL);
 	input_dev->keybit[BIT_WORD(BTN_MOUSE)] = BIT_MASK(BTN_LEFT) |
 		BIT_MASK(BTN_MIDDLE) | BIT_MASK(BTN_RIGHT);
 	input_dev->relbit[0] = BIT_MASK(REL_X) | BIT_MASK(REL_Y);
+#endif
 
 	psmouse->set_rate = psmouse_set_rate;
 	psmouse->set_resolution = psmouse_set_resolution;

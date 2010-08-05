@@ -1728,6 +1728,8 @@ static int lbs_set_auth(struct net_device *dev,
 	}
 
 	switch (dwrq->flags & IW_AUTH_INDEX) {
+	case IW_AUTH_PRIVACY_INVOKED:
+	case IW_AUTH_RX_UNENCRYPTED_EAPOL:
 	case IW_AUTH_TKIP_COUNTERMEASURES:
 	case IW_AUTH_CIPHER_PAIRWISE:
 	case IW_AUTH_CIPHER_GROUP:
@@ -1792,6 +1794,7 @@ static int lbs_set_auth(struct net_device *dev,
 		break;
 
 	default:
+		printk(KERN_CRIT"unsupported ioctol in libertas 0x%x\n", dwrq->flags);
 		ret = -EOPNOTSUPP;
 		break;
 	}
