@@ -83,6 +83,10 @@ static const unsigned short atkbd_set2_keycode[512] = {
 
 #include "hpps2atkbd.h"	/* include the keyboard scancodes */
 
+#elif defined (CONFIG_KEYBOARD_ATKBD_VILIVS5_KEYCODES)
+
+#include "vilivs5kbd.h" /* include the keyboard scancodes */
+
 #else
 	  0, 67, 65, 63, 61, 59, 60, 88,  0, 68, 66, 64, 62, 15, 41,117,
 	  0, 56, 42, 93, 29, 16,  2,  0,  0,  0, 44, 31, 30, 17,  3,  0,
@@ -368,6 +372,7 @@ static irqreturn_t atkbd_interrupt(struct serio *serio, unsigned char data,
 	int value;
 	unsigned short keycode;
 
+#define ATKBD_DEBUG
 #ifdef ATKBD_DEBUG
 	printk(KERN_DEBUG "atkbd.c: Received %02x flags %02x\n", data, flags);
 #endif
@@ -1223,7 +1228,11 @@ MODULE_DEVICE_TABLE(serio, atkbd_serio_ids);
 
 static struct serio_driver atkbd_drv = {
 	.driver		= {
+#ifdef KEYBOARD_ATKBD_VILIVS5_KEYCODES
+		.name	= "vilivs5kbd",
+#else 
 		.name	= "atkbd",
+#endif
 	},
 	.description	= DRIVER_DESC,
 	.id_table	= atkbd_serio_ids,

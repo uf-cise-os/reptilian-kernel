@@ -68,6 +68,13 @@ config KEYBOARD_ATKBD_RDI_KEYCODES
 	  right-hand column will be interpreted as the key shown in the
 	  left-hand column.
 
+config KEYBOARD_ATKBD_VILIVS5_KEYCODES
+   bool "Use Viliv S5 keypad scancodes"
+   depends on KEYBOARD_ATKBD
+   default n
+   help
+       keycodes for Viliv S5
+
 config KEYBOARD_SUNKBD
 	tristate "Sun Type 4 and Type 5 keyboard"
 	select SERIO

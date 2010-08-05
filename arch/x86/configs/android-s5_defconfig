@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.29
-# Tue Jun 22 23:20:44 2010
+# Thu Aug  5 20:29:39 2010
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -1207,6 +1207,7 @@ CONFIG_INPUT_EVBUG=m
 #
 CONFIG_INPUT_KEYBOARD=y
 CONFIG_KEYBOARD_ATKBD=y
+CONFIG_KEYBOARD_ATKBD_VILIVS5_KEYCODES=y
 # CONFIG_KEYBOARD_SUNKBD is not set
 # CONFIG_KEYBOARD_LKKBD is not set
 # CONFIG_KEYBOARD_XTKBD is not set

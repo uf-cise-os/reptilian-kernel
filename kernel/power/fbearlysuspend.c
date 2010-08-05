@@ -19,6 +19,7 @@
 
 #include "power.h"
 
+#ifndef CONFIG_FB_FAKE_EARLYSUSPEND
 static wait_queue_head_t fb_state_wq;
 static DEFINE_SPINLOCK(fb_state_lock);
 static enum {
