@@ -19,6 +19,7 @@
 
 #include "power.h"
 
+#ifndef CONFIG_FB_FAKE_EARLYSUSPEND
 static wait_queue_head_t fb_state_wq;
 static DEFINE_SPINLOCK(fb_state_lock);
 static enum {
@@ -63,18 +64,24 @@ static struct early_suspend stop_drawing_early_suspend_desc = {
 	.resume = start_drawing_late_resume,
 };
 
+#endif	/* CONFIG_FB_FAKE_EARLYSUSPEND */
+
 static ssize_t wait_for_fb_sleep_show(struct kobject *kobj,
 				      struct kobj_attribute *attr, char *buf)
 {
 	char *s = buf;
 	int ret;
 
+#ifdef CONFIG_FB_FAKE_EARLYSUSPEND
+	s+= sprintf(buf, "sleeping");
+#else
 	ret = wait_event_interruptible(fb_state_wq,
 				       fb_state != FB_STATE_DRAWING_OK);
 	if (ret && fb_state == FB_STATE_DRAWING_OK)
 		return ret;
 	else
 		s += sprintf(buf, "sleeping");
+#endif
 	return s - buf;
 }
 
@@ -85,6 +92,9 @@ static ssize_t wait_for_fb_wake_show(struct kobject *kobj,
 	int ret;
 	unsigned long irq_flags;
 
+#ifdef CONFIG_FB_FAKE_EARLYSUSPEND
+	s += sprintf (buf, "awake");
+#else
 	spin_lock_irqsave(&fb_state_lock, irq_flags);
 	if (fb_state == FB_STATE_REQUEST_STOP_DRAWING) {
 		fb_state = FB_STATE_STOPPED_DRAWING;
@@ -98,6 +108,7 @@ static ssize_t wait_for_fb_wake_show(struct kobject *kobj,
 		return ret;
 	else
 		s += sprintf(buf, "awake");
+#endif
 
 	return s - buf;
 }
@@ -129,8 +140,10 @@ static int __init android_power_init(void)
 {
 	int ret;
 
+#ifndef CONFIG_FB_FAKE_EARLYSUSPEND
 	init_waitqueue_head(&fb_state_wq);
 	fb_state = FB_STATE_DRAWING_OK;
+#endif
 
 	ret = sysfs_create_group(power_kobj, &attr_group);
 	if (ret) {
@@ -138,13 +151,17 @@ static int __init android_power_init(void)
 		return ret;
 	}
 
+#ifndef CONFIG_FB_FAKE_EARLYSUSPEND
 	register_early_suspend(&stop_drawing_early_suspend_desc);
+#endif
 	return 0;
 }
 
 static void  __exit android_power_exit(void)
 {
+#ifndef CONFIG_FB_FAKE_EARLYSUSPEND
 	unregister_early_suspend(&stop_drawing_early_suspend_desc);
+#endif
 	sysfs_remove_group(power_kobj, &attr_group);
 }
 

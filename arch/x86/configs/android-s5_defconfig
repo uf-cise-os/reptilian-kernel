@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.29
-# Thu Aug  5 20:51:57 2010
+# Fri Aug  6 09:03:17 2010
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -333,6 +333,7 @@ CONFIG_EARLYSUSPEND=y
 # CONFIG_NO_USER_SPACE_SCREEN_ACCESS_CONTROL is not set
 # CONFIG_CONSOLE_EARLYSUSPEND is not set
 CONFIG_FB_EARLYSUSPEND=y
+CONFIG_FB_FAKE_EARLYSUSPEND=y
 CONFIG_ACPI=y
 CONFIG_ACPI_SLEEP=y
 # CONFIG_ACPI_PROCFS is not set
