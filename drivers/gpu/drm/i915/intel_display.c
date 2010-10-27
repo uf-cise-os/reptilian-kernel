@@ -4717,7 +4717,7 @@ static void do_intel_finish_page_flip(struct drm_device *dev,
 
 	spin_unlock_irqrestore(&dev->event_lock, flags);
 
-	obj_priv = to_intel_bo(work->pending_flip_obj);
+	obj_priv = to_intel_bo(work->old_fb_obj);
 
 	/* Initial scanout buffer will have a 0 pending flip count */
 	if ((atomic_read(&obj_priv->pending_flip) == 0) ||
@@ -4822,8 +4822,10 @@ static int intel_crtc_page_flip(struct drm_crtc *crtc,
 	crtc->fb = fb;
 	i915_gem_object_flush_write_domain(obj);
 	drm_vblank_get(dev, intel_crtc->pipe);
-	obj_priv = to_intel_bo(obj);
+	obj_priv = to_intel_bo(work->old_fb_obj);
 	atomic_inc(&obj_priv->pending_flip);
+
+	obj_priv = to_intel_bo(obj);
 	work->pending_flip_obj = obj;
 
 	if (intel_crtc->plane)
