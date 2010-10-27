@@ -13,7 +13,9 @@
  *
  */
 
+#ifndef __i386__
 #include <asm/mach/time.h>
+#endif
 #include <linux/android_alarm.h>
 #include <linux/device.h>
 #include <linux/miscdevice.h>
