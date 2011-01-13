@@ -86,6 +86,9 @@ static const struct key_entry eeepc_wmi_keymap[] = {
 	{ KE_KEY, 0xe9, { KEY_DISPLAY_OFF } },
 	{ KE_KEY, 0xe0, { KEY_PROG1 } },
 	{ KE_KEY, 0x5c, { KEY_F15 } },
+	{ KE_KEY, 0xf3, { KEY_MENU } },
+	{ KE_KEY, 0xf5, { KEY_HOME } },
+	{ KE_KEY, 0xf6, { KEY_ESC } },
 	{ KE_END, 0},
 };
 
