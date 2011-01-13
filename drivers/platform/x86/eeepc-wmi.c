@@ -69,6 +69,9 @@ static const struct key_entry eeepc_wmi_keymap[] = {
 	{ KE_IGNORE, NOTIFY_BRNDOWN_MIN, { KEY_BRIGHTNESSDOWN } },
 	{ KE_IGNORE, NOTIFY_BRNUP_MIN, { KEY_BRIGHTNESSUP } },
 	{ KE_KEY, 0xcc, { KEY_SWITCHVIDEOMODE } },
+	{ KE_KEY, 0xf3, { KEY_MENU } },
+	{ KE_KEY, 0xf5, { KEY_HOME } },
+	{ KE_KEY, 0xf6, { KEY_ESC } },
 	{ KE_END, 0},
 };
 
