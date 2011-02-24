@@ -165,7 +165,7 @@ struct mt_class mt_classes[] = {
 	{ }
 };
 
-static void mt_feature_mapping(struct hid_device *hdev, struct hid_input *hi,
+static void mt_feature_mapping(struct hid_device *hdev,
 		struct hid_field *field, struct hid_usage *usage)
 {
 	struct mt_device *td = hid_get_drvdata(hdev);
