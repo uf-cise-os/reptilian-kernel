@@ -207,8 +207,6 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 					EV_ABS, ABS_MT_POSITION_X);
 			set_abs(hi->input, ABS_MT_POSITION_X, field,
 				cls->sn_move);
-			/* touchscreen emulation */
-			set_abs(hi->input, ABS_X, field, cls->sn_move);
 			td->last_slot_field = usage->hid;
 			return 1;
 		case HID_GD_Y:
@@ -218,8 +216,6 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 					EV_ABS, ABS_MT_POSITION_Y);
 			set_abs(hi->input, ABS_MT_POSITION_Y, field,
 				cls->sn_move);
-			/* touchscreen emulation */
-			set_abs(hi->input, ABS_Y, field, cls->sn_move);
 			td->last_slot_field = usage->hid;
 			return 1;
 		}
@@ -228,34 +224,51 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 	case HID_UP_DIGITIZER:
 		switch (usage->hid) {
 		case HID_DG_INRANGE:
+			hid_map_usage(hi, usage, bit, max, EV_KEY,
+				ABS_MT_TOUCH_MINOR);
+			input_set_capability(hi->input, EV_KEY,
+				ABS_MT_TOUCH_MINOR);
+			set_abs(hi->input, ABS_MT_TOUCH_MINOR, field, 0);
 			td->last_slot_field = usage->hid;
 			return 1;
 		case HID_DG_CONFIDENCE:
+			hid_map_usage(hi, usage, bit, max, EV_KEY,
+				ABS_MT_TOUCH_MINOR);
+			input_set_capability(hi->input, EV_KEY,
+				ABS_MT_TOUCH_MINOR);
+			set_abs(hi->input, ABS_MT_TOUCH_MINOR, field, 0);
 			td->last_slot_field = usage->hid;
 			return 1;
 		case HID_DG_TIPSWITCH:
-			hid_map_usage(hi, usage, bit, max, EV_KEY, BTN_TOUCH);
-			input_set_capability(hi->input, EV_KEY, BTN_TOUCH);
+			hid_map_usage(hi, usage, bit, max, EV_KEY,
+				ABS_MT_TOUCH_MAJOR);
+			input_set_capability(hi->input, EV_KEY,
+				ABS_MT_TOUCH_MAJOR);
+			set_abs(hi->input, ABS_MT_TOUCH_MAJOR, field, 0);
 			td->last_slot_field = usage->hid;
 			return 1;
 		case HID_DG_CONTACTID:
-			input_mt_init_slots(hi->input, td->maxcontacts);
+			hid_map_usage(hi, usage, bit, max, EV_KEY,
+				ABS_MT_TRACKING_ID);
+			input_set_capability(hi->input, EV_KEY,
+				ABS_MT_TRACKING_ID);
+			set_abs(hi->input, ABS_MT_TRACKING_ID, field, 0);
 			td->last_slot_field = usage->hid;
 			return 1;
 		case HID_DG_WIDTH:
-			hid_map_usage(hi, usage, bit, max,
-					EV_ABS, ABS_MT_TOUCH_MAJOR);
-			set_abs(hi->input, ABS_MT_TOUCH_MAJOR, field,
-				cls->sn_width);
+			hid_map_usage(hi, usage, bit, max, EV_KEY,
+				ABS_MT_WIDTH_MAJOR);
+			input_set_capability(hi->input, EV_KEY,
+				ABS_MT_WIDTH_MAJOR);
+			set_abs(hi->input, ABS_MT_WIDTH_MAJOR, field, 0);
 			td->last_slot_field = usage->hid;
 			return 1;
 		case HID_DG_HEIGHT:
 			hid_map_usage(hi, usage, bit, max,
-					EV_ABS, ABS_MT_TOUCH_MINOR);
-			set_abs(hi->input, ABS_MT_TOUCH_MINOR, field,
-				cls->sn_height);
-			input_set_abs_params(hi->input,
-					ABS_MT_ORIENTATION, 0, 1, 0, 0);
+					EV_ABS, ABS_MT_WIDTH_MINOR);
+			input_set_capability(hi->input, EV_KEY,
+				ABS_MT_WIDTH_MINOR);
+			set_abs(hi->input, ABS_MT_WIDTH_MINOR, field, 0);
 			td->last_slot_field = usage->hid;
 			return 1;
 		case HID_DG_TIPPRESSURE:
@@ -344,12 +357,19 @@ static void mt_emit_event(struct mt_device *td, struct input_dev *input)
 		struct mt_slot *s = &(td->slots[i]);
 		if ((td->mtclass->quirks & MT_QUIRK_NOT_SEEN_MEANS_UP) &&
 			!s->seen_in_this_frame) {
-			s->touch_state = false;
+			if (s->touch_state) {
+				s->touch_state = false;
+				input_event(input, EV_ABS, ABS_MT_TOUCH_MAJOR, s->touch_state);
+				input_mt_sync(input);
+			}
+			s->seen_in_this_frame = false;
+			continue;
 		}
 
-		input_mt_slot(input, i);
-		input_mt_report_slot_state(input, MT_TOOL_FINGER,
-			s->touch_state);
+		if (!s->seen_in_this_frame)
+			continue;
+
+		input_event(input, EV_ABS, ABS_MT_TOUCH_MAJOR, s->touch_state);
 		if (s->touch_state) {
 			/* this finger is on the screen */
 			int wide = (s->w > s->h);
@@ -357,18 +377,19 @@ static void mt_emit_event(struct mt_device *td, struct input_dev *input)
 			int major = max(s->w, s->h) >> 1;
 			int minor = min(s->w, s->h) >> 1;
 
+			input_event(input, EV_ABS, ABS_MT_TRACKING_ID, s->contactid);
 			input_event(input, EV_ABS, ABS_MT_POSITION_X, s->x);
 			input_event(input, EV_ABS, ABS_MT_POSITION_Y, s->y);
 			input_event(input, EV_ABS, ABS_MT_ORIENTATION, wide);
 			input_event(input, EV_ABS, ABS_MT_PRESSURE, s->p);
-			input_event(input, EV_ABS, ABS_MT_TOUCH_MAJOR, major);
-			input_event(input, EV_ABS, ABS_MT_TOUCH_MINOR, minor);
+			input_event(input, EV_ABS, ABS_MT_WIDTH_MAJOR, major);
+			input_event(input, EV_ABS, ABS_MT_WIDTH_MINOR, minor);
 		}
+		input_mt_sync(input);
 		s->seen_in_this_frame = false;
 
 	}
 
-	input_mt_report_pointer_emulation(input, true);
 	input_sync(input);
 	td->num_received = 0;
 }
