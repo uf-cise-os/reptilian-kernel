@@ -328,6 +328,7 @@ config HID_MULTITOUCH
           - eGalax dual-touch panels, including the
 	    Joojoo and Wetab tablets
 	  - LG Display panels (Dell ST2220Tc)
+	  - Stantum multitouch panels
 
 	  If unsure, say N.
 
@@ -500,12 +501,6 @@ config HID_SONY
 	depends on USB_HID
 	---help---
 	Support for Sony PS3 controller.
-
-config HID_STANTUM
-	tristate "Stantum multitouch panel"
-	depends on USB_HID
-	---help---
-	Support for Stantum multitouch panel.
 
 config HID_SUNPLUS
 	tristate "Sunplus wireless desktop"
