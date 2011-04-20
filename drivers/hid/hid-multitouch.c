@@ -50,6 +50,7 @@ MODULE_LICENSE("GPL");
 #define MT_QUIRK_VALID_IS_INRANGE	(1 << 4)
 #define MT_QUIRK_VALID_IS_CONFIDENCE	(1 << 5)
 #define MT_QUIRK_EGALAX_XYZ_FIXUP	(1 << 6)
+#define MT_QUIRK_SLOT_IS_CONTACTID_MINUS_ONE	(1 << 7)
 
 struct mt_slot {
 	__s32 x, y, p, w, h;
@@ -89,6 +90,7 @@ struct mt_class {
 #define MT_CLS_EGALAX				5
 #define MT_CLS_STANTUM				6
 #define MT_CLS_3M				7
+#define MT_CLS_CONFIDENCE_MINUS_ONE		8
 
 #define MT_DEFAULT_MAXCONTACT	10
 
@@ -156,6 +158,9 @@ struct mt_class mt_classes[] = {
 		.sn_move = 2048,
 		.sn_width = 128,
 		.sn_height = 128 },
+	{ .name = MT_CLS_CONFIDENCE_MINUS_ONE,
+		.quirks = MT_QUIRK_VALID_IS_CONFIDENCE |
+			MT_QUIRK_SLOT_IS_CONTACTID_MINUS_ONE },
 
 	{ }
 };
@@ -324,6 +329,9 @@ static int mt_compute_slot(struct mt_device *td)
 
 	if (quirks & MT_QUIRK_SLOT_IS_CONTACTNUMBER)
 		return td->num_received;
+
+	if (quirks & MT_QUIRK_SLOT_IS_CONTACTID_MINUS_ONE)
+		return td->curdata.contactid - 1;
 
 	return find_slot_from_contactid(td);
 }
@@ -605,6 +613,17 @@ static const struct hid_device_id mt_devices[] = {
 	{ .driver_data = MT_CLS_DUAL_INRANGE_CONTACTID,
 		HID_USB_DEVICE(USB_VENDOR_ID_IRTOUCHSYSTEMS,
 			USB_DEVICE_ID_IRTOUCH_INFRARED_USB) },
+
+	/* MosArt panels */
+	{ .driver_data = MT_CLS_CONFIDENCE_MINUS_ONE,
+		HID_USB_DEVICE(USB_VENDOR_ID_ASUS,
+			USB_DEVICE_ID_ASUS_T91MT)},
+	{ .driver_data = MT_CLS_CONFIDENCE_MINUS_ONE,
+		HID_USB_DEVICE(USB_VENDOR_ID_ASUS,
+			USB_DEVICE_ID_ASUSTEK_MULTITOUCH_YFO) },
+	{ .driver_data = MT_CLS_CONFIDENCE_MINUS_ONE,
+		HID_USB_DEVICE(USB_VENDOR_ID_TURBOX,
+			USB_DEVICE_ID_TURBOX_TOUCHSCREEN_MOSART) },
 
 	/* PixCir-based panels */
 	{ .driver_data = MT_CLS_DUAL_INRANGE_CONTACTID,
