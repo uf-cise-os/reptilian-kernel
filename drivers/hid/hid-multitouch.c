@@ -213,6 +213,7 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 			set_abs(hi->input, ABS_MT_POSITION_X, field,
 				cls->sn_move);
 			td->last_slot_field = usage->hid;
+			td->last_field_index = field->index;
 			return 1;
 		case HID_GD_Y:
 			if (quirks & MT_QUIRK_EGALAX_XYZ_FIXUP)
@@ -222,6 +223,7 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 			set_abs(hi->input, ABS_MT_POSITION_Y, field,
 				cls->sn_move);
 			td->last_slot_field = usage->hid;
+			td->last_field_index = field->index;
 			return 1;
 		}
 		return 0;
@@ -235,6 +237,7 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 				ABS_MT_TOUCH_MINOR);
 			set_abs(hi->input, ABS_MT_TOUCH_MINOR, field, 0);
 			td->last_slot_field = usage->hid;
+			td->last_field_index = field->index;
 			return 1;
 		case HID_DG_CONFIDENCE:
 			hid_map_usage(hi, usage, bit, max, EV_KEY,
@@ -243,6 +246,7 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 				ABS_MT_TOUCH_MINOR);
 			set_abs(hi->input, ABS_MT_TOUCH_MINOR, field, 0);
 			td->last_slot_field = usage->hid;
+			td->last_field_index = field->index;
 			return 1;
 		case HID_DG_TIPSWITCH:
 			hid_map_usage(hi, usage, bit, max, EV_KEY,
@@ -251,6 +255,7 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 				ABS_MT_TOUCH_MAJOR);
 			set_abs(hi->input, ABS_MT_TOUCH_MAJOR, field, 0);
 			td->last_slot_field = usage->hid;
+			td->last_field_index = field->index;
 			return 1;
 		case HID_DG_CONTACTID:
 			hid_map_usage(hi, usage, bit, max, EV_KEY,
@@ -259,6 +264,7 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 				ABS_MT_TRACKING_ID);
 			set_abs(hi->input, ABS_MT_TRACKING_ID, field, 0);
 			td->last_slot_field = usage->hid;
+			td->last_field_index = field->index;
 			return 1;
 		case HID_DG_WIDTH:
 			hid_map_usage(hi, usage, bit, max, EV_KEY,
@@ -267,6 +273,7 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 				ABS_MT_WIDTH_MAJOR);
 			set_abs(hi->input, ABS_MT_WIDTH_MAJOR, field, 0);
 			td->last_slot_field = usage->hid;
+			td->last_field_index = field->index;
 			return 1;
 		case HID_DG_HEIGHT:
 			hid_map_usage(hi, usage, bit, max,
@@ -275,6 +282,7 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 				ABS_MT_WIDTH_MINOR);
 			set_abs(hi->input, ABS_MT_WIDTH_MINOR, field, 0);
 			td->last_slot_field = usage->hid;
+			td->last_field_index = field->index;
 			return 1;
 		case HID_DG_TIPPRESSURE:
 			if (quirks & MT_QUIRK_EGALAX_XYZ_FIXUP)
@@ -287,13 +295,15 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 			set_abs(hi->input, ABS_PRESSURE, field,
 				cls->sn_pressure);
 			td->last_slot_field = usage->hid;
+			td->last_field_index = field->index;
 			return 1;
 		case HID_DG_CONTACTCOUNT:
-			td->last_field_index = field->report->maxfield - 1;
+			td->last_field_index = field->index;
 			return 1;
 		case HID_DG_CONTACTMAX:
 			/* we don't set td->last_slot_field as contactcount and
 			 * contact max are global to the report */
+			td->last_field_index = field->index;
 			return -1;
 		}
 		/* let hid-input decide for the others */
@@ -453,23 +463,12 @@ static int mt_event(struct hid_device *hid, struct hid_field *field,
 			break;
 
 		default:
-			if (td->last_field_index
-				&& field->index == td->last_field_index)
-				/* we reach here when the last field in the
-				 * report is not related to multitouch.
-				 * This is not good. As a temporary solution,
-				 * we trigger our mt event completion and
-				 * ignore the field.
-				 */
-				break;
 			/* fallback to the generic hidinput handling */
 			return 0;
 		}
 
 		if (usage->hid == td->last_slot_field) {
 			mt_complete_slot(td);
-			if (!td->last_field_index)
-				mt_emit_event(td, field->hidinput->input);
 		}
 
 		if (field->index == td->last_field_index
