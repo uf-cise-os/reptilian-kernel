@@ -90,7 +90,8 @@ struct mt_class {
 #define MT_CLS_EGALAX				5
 #define MT_CLS_STANTUM				6
 #define MT_CLS_3M				7
-#define MT_CLS_CONFIDENCE_MINUS_ONE		8
+#define MT_CLS_CONFIDENCE			8
+#define MT_CLS_CONFIDENCE_MINUS_ONE		9
 
 #define MT_DEFAULT_MAXCONTACT	10
 
@@ -141,7 +142,9 @@ struct mt_class mt_classes[] = {
 		.quirks = MT_QUIRK_NOT_SEEN_MEANS_UP |
 			MT_QUIRK_CYPRESS,
 		.maxcontacts = 10 },
-
+	{ .name = MT_CLS_CONFIDENCE_MINUS_ONE,
+		.quirks = MT_QUIRK_VALID_IS_CONFIDENCE |
+			MT_QUIRK_SLOT_IS_CONTACTID_MINUS_ONE },
 	{ .name = MT_CLS_EGALAX,
 		.quirks =  MT_QUIRK_SLOT_IS_CONTACTID |
 			MT_QUIRK_VALID_IS_INRANGE |
@@ -158,9 +161,8 @@ struct mt_class mt_classes[] = {
 		.sn_move = 2048,
 		.sn_width = 128,
 		.sn_height = 128 },
-	{ .name = MT_CLS_CONFIDENCE_MINUS_ONE,
-		.quirks = MT_QUIRK_VALID_IS_CONFIDENCE |
-			MT_QUIRK_SLOT_IS_CONTACTID_MINUS_ONE },
+	{ .name = MT_CLS_CONFIDENCE,
+		.quirks = MT_QUIRK_VALID_IS_CONFIDENCE },
 
 	{ }
 };
@@ -623,6 +625,11 @@ static const struct hid_device_id mt_devices[] = {
 	{ .driver_data = MT_CLS_CONFIDENCE_MINUS_ONE,
 		HID_USB_DEVICE(USB_VENDOR_ID_TURBOX,
 			USB_DEVICE_ID_TURBOX_TOUCHSCREEN_MOSART) },
+
+	/* PenMount panels */
+	{ .driver_data = MT_CLS_CONFIDENCE,
+		HID_USB_DEVICE(USB_VENDOR_ID_PENMOUNT,
+			USB_DEVICE_ID_PENMOUNT_PCI) },
 
 	/* PixCir-based panels */
 	{ .driver_data = MT_CLS_DUAL_INRANGE_CONTACTID,
