@@ -1,6 +1,8 @@
 config WL
 	tristate "Broadcom 802.11a/b/g/n hybrid device driver"
-	depends on CFG80211
+	depends on PCI && CFG80211
+	select WIRELESS_EXT
+	select WEXT_PRIV
 	select LIB80211
 	---help---
 	  This module adds support for Broadcom 802.11a/b/g/n hybrid Networking Device Driver.
