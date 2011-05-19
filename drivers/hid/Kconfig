@@ -322,6 +322,7 @@ config HID_MULTITOUCH
 	  - LG Display panels (Dell ST2220Tc)
 	  - Stantum multitouch panels
 	  - Touch International Panels
+	  - Unitec Panels
 
 	  If unsure, say N.
 
