@@ -64,6 +64,7 @@ struct mt_device {
 	struct mt_class *mtclass;	/* our mt device class */
 	unsigned last_field_index;	/* last field index of the report */
 	unsigned last_slot_field;	/* the last field of a slot */
+	int last_mt_collection;	/* the last mt-collection */
 	__s8 inputmode;		/* InputMode HID feature, -1 if non-existent */
 	__u8 num_received;	/* how many contacts we received */
 	__u8 num_expected;	/* expected last contact index */
@@ -233,8 +234,10 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 					EV_ABS, ABS_MT_POSITION_X);
 			set_abs(hi->input, ABS_MT_POSITION_X, field,
 				cls->sn_move);
-			td->last_slot_field = usage->hid;
-			td->last_field_index = field->index;
+			if (td->last_mt_collection == usage->collection_index) {
+				td->last_slot_field = usage->hid;
+				td->last_field_index = field->index;
+			}
 			return 1;
 		case HID_GD_Y:
 			if (quirks & MT_QUIRK_EGALAX_XYZ_FIXUP)
@@ -243,8 +246,10 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 					EV_ABS, ABS_MT_POSITION_Y);
 			set_abs(hi->input, ABS_MT_POSITION_Y, field,
 				cls->sn_move);
-			td->last_slot_field = usage->hid;
-			td->last_field_index = field->index;
+			if (td->last_mt_collection == usage->collection_index) {
+				td->last_slot_field = usage->hid;
+				td->last_field_index = field->index;
+			}
 			return 1;
 		}
 		return 0;
@@ -257,8 +262,10 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 			input_set_capability(hi->input, EV_KEY,
 				ABS_MT_TOUCH_MINOR);
 			set_abs(hi->input, ABS_MT_TOUCH_MINOR, field, 0);
-			td->last_slot_field = usage->hid;
-			td->last_field_index = field->index;
+			if (td->last_mt_collection == usage->collection_index) {
+				td->last_slot_field = usage->hid;
+				td->last_field_index = field->index;
+			}
 			return 1;
 		case HID_DG_CONFIDENCE:
 			hid_map_usage(hi, usage, bit, max, EV_KEY,
@@ -266,8 +273,10 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 			input_set_capability(hi->input, EV_KEY,
 				ABS_MT_TOUCH_MINOR);
 			set_abs(hi->input, ABS_MT_TOUCH_MINOR, field, 0);
-			td->last_slot_field = usage->hid;
-			td->last_field_index = field->index;
+			if (td->last_mt_collection == usage->collection_index) {
+				td->last_slot_field = usage->hid;
+				td->last_field_index = field->index;
+			}
 			return 1;
 		case HID_DG_TIPSWITCH:
 			hid_map_usage(hi, usage, bit, max, EV_KEY,
@@ -275,8 +284,10 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 			input_set_capability(hi->input, EV_KEY,
 				ABS_MT_TOUCH_MAJOR);
 			set_abs(hi->input, ABS_MT_TOUCH_MAJOR, field, 0);
-			td->last_slot_field = usage->hid;
-			td->last_field_index = field->index;
+			if (td->last_mt_collection == usage->collection_index) {
+				td->last_slot_field = usage->hid;
+				td->last_field_index = field->index;
+			}
 			return 1;
 		case HID_DG_CONTACTID:
 			hid_map_usage(hi, usage, bit, max, EV_KEY,
@@ -286,6 +297,7 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 			set_abs(hi->input, ABS_MT_TRACKING_ID, field, 0);
 			td->last_slot_field = usage->hid;
 			td->last_field_index = field->index;
+			td->last_mt_collection = usage->collection_index;
 			return 1;
 		case HID_DG_WIDTH:
 			hid_map_usage(hi, usage, bit, max, EV_KEY,
@@ -293,8 +305,10 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 			input_set_capability(hi->input, EV_KEY,
 				ABS_MT_WIDTH_MAJOR);
 			set_abs(hi->input, ABS_MT_WIDTH_MAJOR, field, 0);
-			td->last_slot_field = usage->hid;
-			td->last_field_index = field->index;
+			if (td->last_mt_collection == usage->collection_index) {
+				td->last_slot_field = usage->hid;
+				td->last_field_index = field->index;
+			}
 			return 1;
 		case HID_DG_HEIGHT:
 			hid_map_usage(hi, usage, bit, max,
@@ -302,8 +316,10 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 			input_set_capability(hi->input, EV_KEY,
 				ABS_MT_WIDTH_MINOR);
 			set_abs(hi->input, ABS_MT_WIDTH_MINOR, field, 0);
-			td->last_slot_field = usage->hid;
-			td->last_field_index = field->index;
+			if (td->last_mt_collection == usage->collection_index) {
+				td->last_slot_field = usage->hid;
+				td->last_field_index = field->index;
+			}
 			return 1;
 		case HID_DG_TIPPRESSURE:
 			if (quirks & MT_QUIRK_EGALAX_XYZ_FIXUP)
@@ -315,16 +331,20 @@ static int mt_input_mapping(struct hid_device *hdev, struct hid_input *hi,
 			/* touchscreen emulation */
 			set_abs(hi->input, ABS_PRESSURE, field,
 				cls->sn_pressure);
-			td->last_slot_field = usage->hid;
-			td->last_field_index = field->index;
+			if (td->last_mt_collection == usage->collection_index) {
+				td->last_slot_field = usage->hid;
+				td->last_field_index = field->index;
+			}
 			return 1;
 		case HID_DG_CONTACTCOUNT:
-			td->last_field_index = field->index;
+			if (td->last_mt_collection == usage->collection_index)
+				td->last_field_index = field->index;
 			return 1;
 		case HID_DG_CONTACTMAX:
 			/* we don't set td->last_slot_field as contactcount and
 			 * contact max are global to the report */
-			td->last_field_index = field->index;
+			if (td->last_mt_collection == usage->collection_index)
+				td->last_field_index = field->index;
 			return -1;
 		}
 		/* let hid-input decide for the others */
@@ -547,6 +567,7 @@ static int mt_probe(struct hid_device *hdev, const struct hid_device_id *id)
 	}
 	td->mtclass = mtclass;
 	td->inputmode = -1;
+	td->last_mt_collection = -1;
 	hid_set_drvdata(hdev, td);
 
 	ret = hid_parse(hdev);
