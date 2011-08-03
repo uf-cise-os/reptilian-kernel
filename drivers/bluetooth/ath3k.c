@@ -399,7 +399,7 @@ static int ath3k_probe(struct usb_interface *intf,
 		return 0;
 	}
 
-	if (request_firmware(&firmware, "ath3k-1.fw", &udev->dev) < 0) {
+	if (request_firmware(&firmware, "ath3k-2.fw", &udev->dev) < 0) {
 		BT_ERR("Error loading firmware");
 		return -EIO;
 	}
@@ -440,4 +440,4 @@ MODULE_AUTHOR("Atheros Communications");
 MODULE_DESCRIPTION("Atheros AR30xx firmware driver");
 MODULE_VERSION(VERSION);
 MODULE_LICENSE("GPL");
-MODULE_FIRMWARE("ath3k-1.fw");
+MODULE_FIRMWARE("ath3k-2.fw");
