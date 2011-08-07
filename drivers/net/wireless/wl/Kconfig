@@ -3,7 +3,11 @@ config WL
 	depends on PCI && CFG80211
 	select WIRELESS_EXT
 	select WEXT_PRIV
+	select MAC80211
 	select LIB80211
+	select LIB80211_CRYPT_WEP
+	select LIB80211_CRYPT_TKIP
+	select LIB80211_CRYPT_CCMP
 	---help---
 	  This module adds support for Broadcom 802.11a/b/g/n hybrid Networking Device Driver.
 
