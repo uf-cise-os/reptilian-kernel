@@ -17,6 +17,7 @@ config POWER_SUPPLY_DEBUG
 config PDA_POWER
 	tristate "Generic PDA/phone power driver"
 	depends on !S390
+	select USB_OTG_UTILS
 	help
 	  Say Y here to enable generic power driver for PDAs and phones with
 	  one or two external power supplies (AC/USB) connected to main and
