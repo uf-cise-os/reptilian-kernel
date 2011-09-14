@@ -96,6 +96,7 @@ struct mt_class {
 #define MT_CLS_3M				0x0101
 #define MT_CLS_CYPRESS				0x0102
 #define MT_CLS_EGALAX				0x0103
+#define MT_CLS_EGALAX_5FINGER			0x0104
 
 #define MT_DEFAULT_MAXCONTACT	10
 
@@ -170,6 +171,14 @@ struct mt_class mt_classes[] = {
 			MT_QUIRK_VALID_IS_INRANGE |
 			MT_QUIRK_EGALAX_XYZ_FIXUP,
 		.maxcontacts = 2,
+		.sn_move = 4096,
+		.sn_pressure = 32,
+	},
+	{ .name = MT_CLS_EGALAX_5FINGER,
+		.quirks =  MT_QUIRK_SLOT_IS_CONTACTID |
+			MT_QUIRK_VALID_IS_INRANGE |
+			MT_QUIRK_EGALAX_XYZ_FIXUP,
+		.maxcontacts = 5,
 		.sn_move = 4096,
 		.sn_pressure = 32,
 	},
@@ -683,6 +692,9 @@ static const struct hid_device_id mt_devices[] = {
 	{  .driver_data = MT_CLS_EGALAX,
 		HID_USB_DEVICE(USB_VENDOR_ID_DWAV,
 			USB_DEVICE_ID_DWAV_EGALAX_MULTITOUCH6) },
+	{  .driver_data = MT_CLS_EGALAX_5FINGER,
+		HID_USB_DEVICE(USB_VENDOR_ID_DWAV,
+			USB_DEVICE_ID_DWAV_EGALAX_MULTITOUCH7) },
 
 	/* Elo TouchSystems IntelliTouch Plus panel */
 	{ .driver_data = MT_CLS_DUAL_NSMU_CONTACTID,
