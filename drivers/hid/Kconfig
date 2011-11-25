@@ -319,6 +319,7 @@ config HID_MULTITOUCH
 	  - MosArt dual-touch panels
 	  - PenMount dual touch panels
 	  - Pixcir dual touch panels
+	  - Quanta panels
 	  - eGalax dual-touch panels, including the Joojoo and Wetab tablets
 	  - Stantum multitouch panels
 	  - Touch International Panels
@@ -427,12 +428,6 @@ config HID_PICOLCD_LEDS
 	depends on HID_PICOLCD=LEDS_CLASS || LEDS_CLASS=y
 	---help---
 	  Provide access to PicoLCD's GPO pins via leds class.
-
-config HID_QUANTA
-	tristate "Quanta Optical Touch panels"
-	depends on USB_HID
-	---help---
-	Support for Quanta Optical Touch dual-touch panels.
 
 config HID_ROCCAT
 	tristate "Roccat special event support"
