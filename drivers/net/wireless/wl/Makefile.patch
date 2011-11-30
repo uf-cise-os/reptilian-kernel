@@ -1,0 +1,4 @@
+123c123
+< EXTRA_LDFLAGS      := $(src)/lib/wlc_hybrid.o_shipped
+---
+> EXTRA_LDFLAGS      := $(srctree)/$(src)/lib/wlc_hybrid.o_shipped
