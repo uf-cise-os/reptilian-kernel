@@ -66,9 +66,8 @@ WL_PATH := drivers/net/wireless/wl
 WL_SRC := $(KERNEL_DIR)/$(WL_PATH)/hybrid-portsrc_x86_32-v5_100_82_112.tar.gz
 $(WL_SRC):
 	@echo Downloading $(@F)...
-	$(hide) curl http://www.broadcom.com/docs/linux_sta/$(@F) > $@ && tar zxf $@ -C $(@D) --overwrite && (cd $(KERNEL_DIR); git checkout $(WL_PATH)) && \
-		sed -i '/<linux\/wireless.h>/ a#include <linux/semaphore.h>' $(@D)/src/wl/sys/wl_iw.h && \
-		sed -i 's/init_MUTEX(&wl->sem)/\n#ifndef init_MUTEX\nsema_init(\&wl->sem,1)\n#else\ninit_MUTEX(\&wl->sem)\n#endif\n/' $(@D)/src/wl/sys/wl_linux.c
+	$(hide) curl http://www.broadcom.com/docs/linux_sta/$(@F) > $@ && tar zxf $@ -C $(@D) --overwrite && \
+	(cd kernel/$(WL_PATH); patch Makefile < Makefile.patch; patch src/wl/sys/wl_iw.h < wl_iw.h.patch)
 $(INSTALLED_KERNEL_TARGET): $(if $(WL_ENABLED),$(WL_SRC))
 
 installclean: FILES += $(KBUILD_OUTPUT) $(INSTALLED_KERNEL_TARGET)
