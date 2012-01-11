@@ -521,7 +521,14 @@ static int wacom_probe(struct usb_interface *intf, const struct usb_device_id *i
 	if (error)
 		goto fail3;
 
-	wacom_setup_device_quirks(features);
+	input_dev->name = wacom_wac->name;
+	input_dev->dev.parent = &intf->dev;
+	input_dev->open = wacom_open;
+	input_dev->close = wacom_close;
+	usb_to_input_id(dev, &input_dev->id);
+	input_set_drvdata(input_dev, wacom);
+
+	wacom_setup_device_quirks(features,input_dev->id.product);
 
 	strlcpy(wacom_wac->name, features->name, sizeof(wacom_wac->name));
 
@@ -536,13 +543,6 @@ static int wacom_probe(struct usb_interface *intf, const struct usb_device_id *i
 		if (error)
 			goto fail3;
 	}
-
-	input_dev->name = wacom_wac->name;
-	input_dev->dev.parent = &intf->dev;
-	input_dev->open = wacom_open;
-	input_dev->close = wacom_close;
-	usb_to_input_id(dev, &input_dev->id);
-	input_set_drvdata(input_dev, wacom);
 
 	wacom_setup_input_capabilities(input_dev, wacom_wac);
 
