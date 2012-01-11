@@ -1012,7 +1012,8 @@ static void wacom_setup_intuos(struct wacom_wac *wacom_wac)
 	input_set_abs_params(input_dev, ABS_THROTTLE, -1023, 1023, 0, 0);
 }
 
-void wacom_setup_device_quirks(struct wacom_features *features)
+void wacom_setup_device_quirks(struct wacom_features *features,
+				int product_id)
 {
 
 	/* touch device found but size is not defined. use default */
@@ -1037,6 +1038,14 @@ void wacom_setup_device_quirks(struct wacom_features *features)
 		features->pressure_fuzz = 16;
 		features->quirks |= WACOM_QUIRK_BBTOUCH_LOWRES;
 	}
+
+	/* physical limits for the finger device of TPC93 */
+	if (product_id == 0x93 && features->device_type == BTN_TOOL_FINGER) {
+		features->x_min = 160;
+		features->x_max = 3960;
+		features->y_min = 160;
+		features->y_max = 3960;
+	}
 }
 
 static unsigned int wacom_calculate_touch_res(unsigned int logical_max,
@@ -1056,9 +1065,9 @@ void wacom_setup_input_capabilities(struct input_dev *input_dev,
 
 	__set_bit(BTN_TOUCH, input_dev->keybit);
 
-	input_set_abs_params(input_dev, ABS_X, 0, features->x_max,
+	input_set_abs_params(input_dev, ABS_X, features->x_min, features->x_max,
 			     features->x_fuzz, 0);
-	input_set_abs_params(input_dev, ABS_Y, 0, features->y_max,
+	input_set_abs_params(input_dev, ABS_Y, features->y_min, features->y_max,
 			     features->y_fuzz, 0);
 	input_set_abs_params(input_dev, ABS_PRESSURE, 0, features->pressure_max,
 			     features->pressure_fuzz, 0);

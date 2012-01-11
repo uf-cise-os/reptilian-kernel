@@ -86,6 +86,8 @@ struct wacom_features {
 	int pressure_fuzz;
 	int distance_fuzz;
 	unsigned quirks;
+	int x_min;
+	int y_min;
 };
 
 struct wacom_shared {
