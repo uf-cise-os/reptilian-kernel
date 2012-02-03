@@ -123,6 +123,7 @@ struct usbtouch_usb {
 enum {
 	DEVTYPE_IGNORE = -1,
 	DEVTYPE_EGALAX,
+	DEVTYPE_EGALAX2,
 	DEVTYPE_PANJIT,
 	DEVTYPE_3M,
 	DEVTYPE_ITM,
@@ -150,6 +151,14 @@ enum {
 	.bInterfaceProtocol = USB_INTERFACE_PROTOCOL_MOUSE
 
 static const struct usb_device_id usbtouch_devices[] = {
+
+#ifdef CONFIG_TOUCHSCREEN_USB_EGALAX_REVERSE
+	{USB_DEVICE_HID_CLASS(0x0eef, 0x0001), .driver_info = DEVTYPE_EGALAX2},
+	{USB_DEVICE_HID_CLASS(0x0eef, 0x0002), .driver_info = DEVTYPE_EGALAX2},
+	{USB_DEVICE(0x0eef, 0x0001), .driver_info = DEVTYPE_EGALAX2},
+	{USB_DEVICE(0x0eef, 0x0002), .driver_info = DEVTYPE_EGALAX2},
+#endif
+
 #ifdef CONFIG_TOUCHSCREEN_USB_EGALAX
 	/* ignore the HID capable devices, handled by usbhid */
 	{USB_DEVICE_HID_CLASS(0x0eef, 0x0001), .driver_info = DEVTYPE_IGNORE},
@@ -273,6 +282,51 @@ static int e2i_read_data(struct usbtouch_usb *dev, unsigned char *pkt)
 	dev->press = (tmp > 0 ? tmp : 0);
 
 	return 1;
+}
+#endif
+
+/*****************************************************************************
+ * Faytech Monitor part
+ */
+
+#ifdef CONFIG_TOUCHSCREEN_USB_EGALAX_REVERSE
+
+#ifndef MULTI_PACKET
+#define MULTI_PACKET
+#endif
+
+#define EGALAX2_PKT_TYPE_MASK		0xFE
+#define EGALAX2_PKT_TYPE_REPT		0x80
+#define EGALAX2_PKT_TYPE_DIAG		0x0A
+
+int x0, x1, x2, x3, x4, x5 = 0;
+
+static int egalax2_read_data(struct usbtouch_usb *dev, unsigned char *pkt)
+{
+	if ((pkt[0] & EGALAX2_PKT_TYPE_MASK) != EGALAX2_PKT_TYPE_REPT)
+		return 0;
+
+	dev->y = ((pkt[4] & 0x0F) << 7) | (pkt[3] & 0x7F);
+	dev->x = ((pkt[2] & 0x0F) << 7) | (pkt[1] & 0x7F);
+	dev->touch = pkt[0] & 0x01;
+
+	return 1;
+}
+
+static int egalax2_get_pkt_len(unsigned char *buf, int len)
+{
+	switch (buf[0] & EGALAX2_PKT_TYPE_MASK) {
+	case EGALAX2_PKT_TYPE_REPT:
+		return 5;
+
+	case EGALAX2_PKT_TYPE_DIAG:
+		if (len < 2)
+			return -1;
+
+		return buf[1] + 2;
+	}
+
+	return 0;
 }
 #endif
 
@@ -953,6 +1007,19 @@ static void usbtouch_process_multi(struct usbtouch_usb *usbtouch,
 #endif
 
 static struct usbtouch_device_info usbtouch_dev_info[] = {
+#ifdef CONFIG_TOUCHSCREEN_USB_EGALAX_REVERSE
+	[DEVTYPE_EGALAX2] = {
+		.min_xc		= 0x0,
+		.max_xc		= 0x07ff,
+		.min_yc		= 0x0,
+		.max_yc		= 0x07ff,
+		.rept_size	= 8,
+		.process_pkt	= usbtouch_process_multi,
+		.get_pkt_len	= egalax2_get_pkt_len,
+		.read_data	= egalax2_read_data,
+	},
+#endif
+
 #ifdef CONFIG_TOUCHSCREEN_USB_EGALAX
 	[DEVTYPE_EGALAX] = {
 		.min_xc		= 0x0,
