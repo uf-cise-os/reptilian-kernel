@@ -365,6 +365,12 @@ config PANTHERLORD_FF
 	  Say Y here if you have a PantherLord/GreenAsia based game controller
 	  or adapter and want to enable force feedback support for it.
 
+config HID_PENMOUNT
+	tristate "PenMount USB HID TouchScreen support"
+	depends on USB_HID
+	---help---
+	Support for PenMount touch screen.
+
 config HID_PETALYNX
 	tristate "Petalynx Maxter remote control"
 	depends on USB_HID
