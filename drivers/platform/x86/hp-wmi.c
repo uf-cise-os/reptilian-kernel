@@ -130,6 +130,7 @@ struct bios_rfkill2_state {
 };
 
 static const struct key_entry hp_wmi_keymap[] = {
+	{ KE_KEY, 0x0,    { KEY_AGAIN } },
 	{ KE_KEY, 0x02,   { KEY_BRIGHTNESSUP } },
 	{ KE_KEY, 0x03,   { KEY_BRIGHTNESSDOWN } },
 	{ KE_KEY, 0x20e6, { KEY_PROG1 } },
