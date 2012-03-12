@@ -53,9 +53,18 @@ else
 KERNELRELEASE := $(shell $(MAKE) -sC $(KERNEL_DIR) O=$(KBUILD_OUTPUT) ARCH=$(TARGET_ARCH) kernelrelease)
 KERNEL_MODULES_DEP := $(TARGET_OUT)/lib/modules/$(KERNELRELEASE)/modules.dep
 endif
-$(KERNEL_MODULES_DEP): $(INSTALLED_KERNEL_TARGET)
+$(TARGET_OUT_INTERMEDIATES)/%.kmodule: $(INSTALLED_KERNEL_TARGET)
+	$(hide) cp -an $(EXTRA_KERNEL_MODULE_PATH_$*) $(TARGET_OUT_INTERMEDIATES)/$*.kmodule
+	@echo Building additional kernel module $*
+	$(mk_kernel) M=$(CURDIR)/$@ modules
+
+$(KERNEL_MODULES_DEP): $(INSTALLED_KERNEL_TARGET) $(patsubst %,$(TARGET_OUT_INTERMEDIATES)/%.kmodule,$(TARGET_EXTRA_KERNEL_MODULES))
 	$(hide) rm -rf $(TARGET_OUT)/lib/modules
 	$(mk_kernel) INSTALL_MOD_PATH=$(CURDIR)/$(TARGET_OUT) modules_install
+	+ $(hide) for kmod in $(TARGET_EXTRA_KERNEL_MODULES) ; do \
+	        echo Installing additional kernel module $${kmod} ; \
+	        $(subst +,,$(subst $(hide),,$(mk_kernel))) INSTALL_MOD_PATH=$(CURDIR)/$(TARGET_OUT) M=$(CURDIR)/$(TARGET_OUT_INTERMEDIATES)/$${kmod}.kmodule modules_install ; \
+	done
 	$(hide) rm -f $(TARGET_OUT)/lib/modules/*/{build,source}
 endif
 
