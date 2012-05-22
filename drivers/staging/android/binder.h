@@ -20,11 +20,49 @@
 #ifndef _LINUX_BINDER_H
 #define _LINUX_BINDER_H
 
+#ifdef CONFIG_COMPAT
+#include <linux/compat.h>
+#endif
 #include <linux/ioctl.h>
 
 #define B_PACK_CHARS(c1, c2, c3, c4) \
 	((((c1)<<24)) | (((c2)<<16)) | (((c3)<<8)) | (c4))
 #define B_TYPE_LARGE 0x85
+
+#ifndef CONFIG_ANDROID_BINDER_IPC_COMPAT_32
+/*
+ * Define strong types (and sizes) for the user-space structure elements.
+ */
+typedef signed long	binder_long;
+typedef unsigned long	binder_ulong;
+typedef size_t		binder_size_t;
+typedef void		*binder_ptr;
+typedef const void	*binder_const_ptr;
+#else /* CONFIG_ANDROID_BINDER_IPC_COMPAT_32 */
+/*
+ * compatibility definitions for running a 32-bit user-space
+ * process with a 64-bit kernel. Does not work with 64-bit processes.
+ */
+typedef __s32		binder_long;
+typedef __u32		binder_ulong;
+typedef __u32		binder_size_t;
+typedef __u32		binder_ptr;
+typedef __u32		binder_const_ptr;
+#endif /* CONFIG_ANDROID_BINDER_IPC_COMPAT_32 */
+
+/*
+ * These defines are used to provide casting when converting from the
+ * associated types (mostly) for printing. This allows us to eliminate
+ * ifdefs as well as type conversion warnings.
+ * If you use these for anything other than printk's... be certain that
+ * you are doing the right thing.
+ */
+#define BINDER_LONG_TO_SLONG(x)			((signed long)(x))
+#define BINDER_ULONG_TO_ULONG(x)		((unsigned long)(x))
+#define BINDER_SIZE_T_TO_SIZE_T(x)		((size_t)(x))
+#define BINDER_PTR_TO_PTR(x)			((void *)(unsigned long)(x))
+#define BINDER_CONST_PTR_TO_CONST_PTR(x) \
+	((const void *)(unsigned long)(x))
 
 enum {
 	BINDER_TYPE_BINDER	= B_PACK_CHARS('s', 'b', '*', B_TYPE_LARGE),
@@ -48,17 +86,17 @@ enum {
  */
 struct flat_binder_object {
 	/* 8 bytes for large_flat_header. */
-	unsigned long		type;
-	unsigned long		flags;
+	binder_ulong		type;
+	binder_ulong		flags;
 
 	/* 8 bytes of data. */
 	union {
-		void __user	*binder;	/* local object */
-		signed long	handle;		/* remote object */
+		binder_ptr	__user binder;	/* local object */
+		binder_long	handle;		/* remote object */
 	};
 
 	/* extra data associated with local object */
-	void __user		*cookie;
+	binder_ptr		__user cookie;
 };
 
 /*
@@ -67,18 +105,18 @@ struct flat_binder_object {
  */
 
 struct binder_write_read {
-	signed long	write_size;	/* bytes to write */
-	signed long	write_consumed;	/* bytes consumed by driver */
-	unsigned long	write_buffer;
-	signed long	read_size;	/* bytes to read */
-	signed long	read_consumed;	/* bytes consumed by driver */
-	unsigned long	read_buffer;
+	binder_long	write_size;	/* bytes to write */
+	binder_long	write_consumed;	/* bytes consumed by driver */
+	binder_ulong	write_buffer;
+	binder_long	read_size;	/* bytes to read */
+	binder_long	read_consumed;	/* bytes consumed by driver */
+	binder_ulong	read_buffer;
 };
 
 /* Use with BINDER_VERSION, driver fills in fields. */
 struct binder_version {
 	/* driver protocol version -- increment with incompatible change */
-	signed long	protocol_version;
+	binder_long	protocol_version;
 };
 
 /* This is the current protocol version. */
@@ -86,7 +124,7 @@ struct binder_version {
 
 #define BINDER_WRITE_READ		_IOWR('b', 1, struct binder_write_read)
 #define	BINDER_SET_IDLE_TIMEOUT		_IOW('b', 3, __s64)
-#define	BINDER_SET_MAX_THREADS		_IOW('b', 5, size_t)
+#define	BINDER_SET_MAX_THREADS		_IOW('b', 5, binder_size_t)
 #define	BINDER_SET_IDLE_PRIORITY	_IOW('b', 6, __s32)
 #define	BINDER_SET_CONTEXT_MGR		_IOW('b', 7, __s32)
 #define	BINDER_THREAD_EXIT		_IOW('b', 8, __s32)
@@ -119,18 +157,18 @@ struct binder_transaction_data {
 	 * identifying the target and contents of the transaction.
 	 */
 	union {
-		size_t	handle;	/* target descriptor of command transaction */
-		void	*ptr;	/* target descriptor of return transaction */
+		binder_size_t	handle;	/* target descriptor of command trans */
+		binder_ptr	ptr;	/* target descriptor of return trans */
 	} target;
-	void		*cookie;	/* target object cookie */
+	binder_ptr	cookie;		/* target object cookie */
 	unsigned int	code;		/* transaction command */
 
 	/* General information about the transaction. */
 	unsigned int	flags;
 	pid_t		sender_pid;
 	uid_t		sender_euid;
-	size_t		data_size;	/* number of bytes of data */
-	size_t		offsets_size;	/* number of bytes of offsets */
+	binder_size_t	data_size;	/* number of bytes of data */
+	binder_size_t	offsets_size;	/* number of bytes of offsets */
 
 	/* If this transaction is inline, the data immediately
 	 * follows here; otherwise, it ends with a pointer to
@@ -139,17 +177,17 @@ struct binder_transaction_data {
 	union {
 		struct {
 			/* transaction data */
-			const void __user	*buffer;
+			binder_const_ptr __user buffer;
 			/* offsets from buffer to flat_binder_object structs */
-			const void __user	*offsets;
+			binder_const_ptr __user offsets;
 		} ptr;
 		uint8_t	buf[8];
 	} data;
 };
 
 struct binder_ptr_cookie {
-	void *ptr;
-	void *cookie;
+	binder_ptr ptr;
+	binder_ptr cookie;
 };
 
 struct binder_pri_desc {
@@ -159,8 +197,8 @@ struct binder_pri_desc {
 
 struct binder_pri_ptr_cookie {
 	int priority;
-	void *ptr;
-	void *cookie;
+	binder_ptr ptr;
+	binder_ptr cookie;
 };
 
 enum binder_driver_return_protocol {
@@ -203,7 +241,7 @@ enum binder_driver_return_protocol {
 	BR_RELEASE = _IOR('r', 9, struct binder_ptr_cookie),
 	BR_DECREFS = _IOR('r', 10, struct binder_ptr_cookie),
 	/*
-	 * void *:	ptr to binder
+	 * void *: ptr to binder
 	 * void *: cookie for binder
 	 */
 
@@ -234,12 +272,11 @@ enum binder_driver_return_protocol {
 	 * not currently supported
 	 * stop threadpool thread
 	 */
-
-	BR_DEAD_BINDER = _IOR('r', 15, void *),
+	BR_DEAD_BINDER = _IOR('r', 15, binder_ptr),
 	/*
 	 * void *: cookie
 	 */
-	BR_CLEAR_DEATH_NOTIFICATION_DONE = _IOR('r', 16, void *),
+	BR_CLEAR_DEATH_NOTIFICATION_DONE = _IOR('r', 16, binder_ptr),
 	/*
 	 * void *: cookie
 	 */
@@ -319,8 +356,7 @@ enum binder_driver_command_protocol {
 	 * void *: ptr to binder
 	 * void *: cookie
 	 */
-
-	BC_DEAD_BINDER_DONE = _IOW('c', 16, void *),
+	BC_DEAD_BINDER_DONE = _IOW('c', 16, binder_ptr),
 	/*
 	 * void *: cookie
 	 */
