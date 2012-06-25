@@ -319,10 +319,12 @@ config HID_MULTITOUCH
 	  - MosArt dual-touch panels
 	  - PenMount dual touch panels
 	  - Pixcir dual touch panels
+	  - Quanta panels
 	  - eGalax dual-touch panels, including the Joojoo and Wetab tablets
 	  - Stantum multitouch panels
 	  - Touch International Panels
 	  - Unitec Panels
+	  - XAT optical touch panels
 
 	  If unsure, say N.
 
@@ -362,6 +364,12 @@ config PANTHERLORD_FF
 	---help---
 	  Say Y here if you have a PantherLord/GreenAsia based game controller
 	  or adapter and want to enable force feedback support for it.
+
+config HID_PENMOUNT
+	tristate "PenMount USB HID TouchScreen support"
+	depends on USB_HID
+	---help---
+	Support for PenMount touch screen.
 
 config HID_PETALYNX
 	tristate "Petalynx Maxter remote control"
@@ -426,12 +434,6 @@ config HID_PICOLCD_LEDS
 	depends on HID_PICOLCD=LEDS_CLASS || LEDS_CLASS=y
 	---help---
 	  Provide access to PicoLCD's GPO pins via leds class.
-
-config HID_QUANTA
-	tristate "Quanta Optical Touch panels"
-	depends on USB_HID
-	---help---
-	Support for Quanta Optical Touch dual-touch panels.
 
 config HID_ROCCAT
 	tristate "Roccat special event support"

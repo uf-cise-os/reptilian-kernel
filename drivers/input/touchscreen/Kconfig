@@ -536,6 +536,7 @@ config TOUCHSCREEN_USB_COMPOSITE
 	help
 	  USB Touchscreen driver for:
 	  - eGalax Touchkit USB (also includes eTurboTouch CT-410/510/700)
+	  - Faytech Touchscreen Automotive Monitor (includes 7, 9 and 10 inch units)
 	  - PanJit TouchSet USB
 	  - 3M MicroTouch USB (EX II series)
 	  - ITM
@@ -570,6 +571,16 @@ config TOUCHSCREEN_USB_EGALAX
 	default y
 	bool "eGalax, eTurboTouch CT-410/510/700 device support" if EXPERT
 	depends on TOUCHSCREEN_USB_COMPOSITE
+
+config TOUCHSCREEN_USB_EGALAX_REVERSE
+	default n
+	depends on TOUCHSCREEN_USB_EGALAX
+	bool "eGalax Special reverse MSB / LSB Packet" if EXPERT
+	depends on TOUCHSCREEN_USB_EGALAX
+        help
+          Special reversed MSB / LSB packet and Reversed X / Y
+	  When selected it will disable 0xeef:0001 from the HID system
+          - Faytech Touch screen monitor FT0100TM, FT0070TM
 
 config TOUCHSCREEN_USB_PANJIT
 	default y
