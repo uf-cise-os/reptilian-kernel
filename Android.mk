@@ -70,7 +70,7 @@ endif
 
 # rules to get source of Broadcom 802.11a/b/g/n hybrid device driver
 # based on broadcomsetup.sh of Kyle Evans
-WL_ENABLED := $(shell grep ^CONFIG_WL=[my] $(KERNEL_CONFIG_FILE))
+WL_ENABLED := $(shell grep ^CONFIG_WL=[my] $(KERNEL_DOTCONFIG_FILE))
 WL_PATH := drivers/net/wireless/wl
 WL_SRC := $(KERNEL_DIR)/$(WL_PATH)/hybrid-portsrc_x86_32-v5_100_82_112.tar.gz
 $(WL_SRC):
