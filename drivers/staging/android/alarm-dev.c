@@ -392,6 +392,9 @@ static enum alarmtimer_restart devalarm_alarmhandler(struct alarm *alrm,
 static const struct file_operations alarm_fops = {
 	.owner = THIS_MODULE,
 	.unlocked_ioctl = alarm_ioctl,
+#ifdef CONFIG_COMPAT
+	.compat_ioctl = alarm_ioctl,
+#endif
 	.open = alarm_open,
 	.release = alarm_release,
 #ifdef CONFIG_COMPAT
