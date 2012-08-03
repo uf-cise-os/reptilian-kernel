@@ -83,6 +83,30 @@ void acpi_device_add_finalize(struct acpi_device *device);
 void acpi_free_pnp_ids(struct acpi_device_pnp *pnp);
 
 /* --------------------------------------------------------------------------
+				  Button
+   -------------------------------------------------------------------------- */
+#define ACPI_BUTTON_CLASS		"button"
+#define ACPI_BUTTON_FILE_INFO		"info"
+#define ACPI_BUTTON_FILE_STATE		"state"
+#define ACPI_BUTTON_TYPE_UNKNOWN	0x00
+#define ACPI_BUTTON_NOTIFY_STATUS	0x80
+
+#define ACPI_BUTTON_SUBCLASS_POWER	"power"
+#define ACPI_BUTTON_HID_POWER		"PNP0C0C"
+#define ACPI_BUTTON_DEVICE_NAME_POWER	"Power Button"
+#define ACPI_BUTTON_TYPE_POWER		0x01
+
+#define ACPI_BUTTON_SUBCLASS_SLEEP	"sleep"
+#define ACPI_BUTTON_HID_SLEEP		"PNP0C0E"
+#define ACPI_BUTTON_DEVICE_NAME_SLEEP	"Sleep Button"
+#define ACPI_BUTTON_TYPE_SLEEP		0x03
+
+#define ACPI_BUTTON_SUBCLASS_LID	"lid"
+#define ACPI_BUTTON_HID_LID		"PNP0C0D"
+#define ACPI_BUTTON_DEVICE_NAME_LID	"Lid Switch"
+#define ACPI_BUTTON_TYPE_LID		0x05
+
+/* --------------------------------------------------------------------------
                                   Power Resource
    -------------------------------------------------------------------------- */
 int acpi_power_init(void);
