@@ -11,8 +11,6 @@
 #include <linux/module.h>
 #include "power.h"
 
-#define SUSPEND_CONSOLE	(MAX_NR_CONSOLES-1)
-
 static int orig_fgconsole, orig_kmsg;
 
 static DEFINE_MUTEX(vt_switch_mutex);
