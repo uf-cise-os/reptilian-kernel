@@ -304,6 +304,14 @@ static int hid_accel_3d_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "failed to setup common attributes\n");
 		goto error_free_dev;
 	}
+	if (accel_state->common_attributes.sensitivity.report_id == -1) {
+		sensor_hub_input_get_attribute_info(hsdev,
+			HID_FEATURE_REPORT,
+			HID_USAGE_SENSOR_ACCEL_3D,
+			HID_USAGE_SENSOR_ACCEL |
+				HID_USAGE_SENSOR_MODIFIER_CHG_SENSITIVITY_ABS,
+			&accel_state->common_attributes.sensitivity);
+	}
 
 	channels = kmemdup(accel_3d_channels, sizeof(accel_3d_channels),
 			   GFP_KERNEL);
