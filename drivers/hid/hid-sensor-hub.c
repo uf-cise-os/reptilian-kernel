@@ -438,7 +438,7 @@ static int sensor_hub_raw_event(struct hid_device *hdev,
 			 report->id, size, report->type);
 	hid_dbg(hdev, "maxfield:%d\n", report->maxfield);
 	if (report->type != HID_INPUT_REPORT)
-		return 1;
+		return 0;
 
 	ptr = raw_data;
 	ptr++; /* Skip report id */
