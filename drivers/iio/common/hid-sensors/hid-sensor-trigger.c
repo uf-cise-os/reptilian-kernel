@@ -32,19 +32,34 @@ static int hid_sensor_data_rdy_trigger_set_state(struct iio_trigger *trig,
 						bool state)
 {
 	struct hid_sensor_common *st = iio_trigger_get_drvdata(trig);
-	int state_val;
+	s32 power_state_val;
+	s32 report_state_val;
 
-	state_val = state ? 1 : 0;
-	if (IS_ENABLED(CONFIG_HID_SENSOR_ENUM_BASE_QUIRKS))
-		++state_val;
 	st->data_ready = state;
+	if (state) {
+		power_state_val =
+			HID_USAGE_SENSOR_PROP_POWER_STATE_D0_FULL_POWER_ENUM;
+		report_state_val =
+			HID_USAGE_SENSOR_PROP_REPORT_STATE_ALL_EVENTS_ENUM;
+	} else {
+		power_state_val =
+			HID_USAGE_SENSOR_PROP_POWER_STATE_D1_LOW_POWER_ENUM;
+		report_state_val =
+			HID_USAGE_SENSOR_PROP_REPORT_STATE_NO_EVENTS_ENUM;
+	}
+
 	sensor_hub_set_feature(st->hsdev, st->power_state.report_id,
 					st->power_state.index,
-					(s32)state_val);
+					power_state_val);
 
 	sensor_hub_set_feature(st->hsdev, st->report_state.report_id,
 					st->report_state.index,
-					(s32)state_val);
+					report_state_val);
+
+	/* Some hubs require this read as a 'sync' point. */
+	sensor_hub_get_feature(st->hsdev, st->power_state.report_id,
+					st->power_state.index,
+					&power_state_val);
 
 	return 0;
 }
