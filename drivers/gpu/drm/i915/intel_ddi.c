@@ -1526,6 +1526,19 @@ void intel_ddi_init(struct drm_device *dev, enum port port)
 			kfree(intel_dig_port);
 			return;
 		}
+
+		if (IS_ENABLED(CONFIG_SWITCH)) {
+			hdmi_connector->hotplug_switch.name =
+				kasprintf(GFP_KERNEL, "hdmi_%c", 'a' + port);
+			if (!hdmi_connector->hotplug_switch.name) {
+				DRM_ERROR("%s failed to allocate memory",
+						__func__);
+				kfree(hdmi_connector);
+				kfree(dp_connector);
+				kfree(intel_dig_port);
+				return;
+			}
+		}
 	}
 
 	intel_encoder = &intel_dig_port->base;
