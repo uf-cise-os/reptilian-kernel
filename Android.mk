@@ -48,12 +48,9 @@ $(INSTALLED_KERNEL_TARGET): $(KERNEL_DOTCONFIG_FILE)
 	$(if $(FIRMWARE_ENABLED),$(mk_kernel) INSTALL_MOD_PATH=$(CURDIR)/$(TARGET_OUT) firmware_install)
 
 ifneq ($(MOD_ENABLED),)
-ifeq ($(wildcard $(INSTALLED_KERNEL_TARGET)),)
-KERNEL_MODULES_DEP := $(TARGET_OUT)/lib/modules
-else
-KERNELRELEASE := $(shell $(MAKE) -sC $(KERNEL_DIR) O=$(KBUILD_OUTPUT) ARCH=$(TARGET_ARCH) kernelrelease)
-KERNEL_MODULES_DEP := $(TARGET_OUT)/lib/modules/$(KERNELRELEASE)/modules.dep
-endif
+KERNEL_MODULES_DEP := $(firstword $(wildcard $(TARGET_OUT)/lib/modules/*/modules.dep))
+KERNEL_MODULES_DEP := $(if $(KERNEL_MODULES_DEP),$(KERNEL_MODULES_DEP),$(TARGET_OUT)/lib/modules)
+
 $(TARGET_OUT_INTERMEDIATES)/%.kmodule: $(INSTALLED_KERNEL_TARGET)
 	$(hide) cp -an $(EXTRA_KERNEL_MODULE_PATH_$*) $(TARGET_OUT_INTERMEDIATES)/$*.kmodule
 	@echo Building additional kernel module $*
