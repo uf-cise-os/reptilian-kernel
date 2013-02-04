@@ -48,13 +48,13 @@ static int hid_sensor_data_rdy_trigger_set_state(struct iio_trigger *trig,
 			HID_USAGE_SENSOR_PROP_REPORT_STATE_NO_EVENTS_ENUM;
 	}
 
-	sensor_hub_set_feature(st->hsdev, st->power_state.report_id,
-					st->power_state.index,
-					power_state_val);
-
 	sensor_hub_set_feature(st->hsdev, st->report_state.report_id,
 					st->report_state.index,
 					report_state_val);
+
+	sensor_hub_set_feature(st->hsdev, st->power_state.report_id,
+					st->power_state.index,
+					power_state_val);
 
 	/* Some hubs require this read as a 'sync' point. */
 	sensor_hub_get_feature(st->hsdev, st->power_state.report_id,
