@@ -193,6 +193,9 @@ static const struct bios_settings_t bios_tbl[] = {
 	{"Acer", "AO531h", "v0.3304", 0x55, 0x58, {0x20, 0x00} },
 	/* Acer 751 */
 	{"Acer", "AO751h", "V0.3212", 0x55, 0x58, {0x21, 0x00} },
+	/* Acer 1425 */
+	{"Acer", "Aspire 1425P",  "V1.3118", 0x55, 0x58, {0x9e, 0x00} },
+	{"Acer", "Aspire 1425P",  "V1.3127", 0x55, 0x58, {0x9e, 0x00} },
 	/* Acer 1825 */
 	{"Acer", "Aspire 1825PTZ", "V1.3118", 0x55, 0x58, {0x9e, 0x00} },
 	{"Acer", "Aspire 1825PTZ", "V1.3127", 0x55, 0x58, {0x9e, 0x00} },
@@ -722,6 +725,7 @@ MODULE_DESCRIPTION("Aspire One temperature and fan driver");
 MODULE_ALIAS("dmi:*:*Acer*:pnAOA*:");
 MODULE_ALIAS("dmi:*:*Acer*:pnAO751h*:");
 MODULE_ALIAS("dmi:*:*Acer*:pnAspire*1410*:");
+MODULE_ALIAS("dmi:*:*Acer*:pnAspire*1425*:");
 MODULE_ALIAS("dmi:*:*Acer*:pnAspire*1810*:");
 MODULE_ALIAS("dmi:*:*Acer*:pnAspire*1825PTZ:");
 MODULE_ALIAS("dmi:*:*Acer*:pnAO531*:");
