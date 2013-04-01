@@ -249,11 +249,13 @@ static int i2c_device_probe(struct device *dev)
 	dev_dbg(dev, "probe\n");
 
 	pm_runtime_get_sync(&client->adapter->dev);
+	acpi_dev_pm_attach(&client->dev, true);
 
 	status = driver->probe(client, i2c_match_id(driver->id_table, client));
 	if (status) {
 		client->driver = NULL;
 		i2c_set_clientdata(client, NULL);
+		acpi_dev_pm_detach(&client->dev, true);
 	}
 
 	pm_runtime_put(&client->adapter->dev);
@@ -285,6 +287,7 @@ static int i2c_device_remove(struct device *dev)
 		i2c_set_clientdata(client, NULL);
 	}
 	pm_runtime_put(&client->adapter->dev);
+	acpi_dev_pm_detach(&client->dev, true);
 	return status;
 }
 
