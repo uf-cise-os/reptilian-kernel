@@ -248,11 +248,16 @@ static int i2c_device_probe(struct device *dev)
 					client->flags & I2C_CLIENT_WAKE);
 	dev_dbg(dev, "probe\n");
 
+	pm_runtime_get_sync(&client->adapter->dev);
+
 	status = driver->probe(client, i2c_match_id(driver->id_table, client));
 	if (status) {
 		client->driver = NULL;
 		i2c_set_clientdata(client, NULL);
 	}
+
+	pm_runtime_put(&client->adapter->dev);
+
 	return status;
 }
 
@@ -264,6 +269,8 @@ static int i2c_device_remove(struct device *dev)
 
 	if (!client || !dev->driver)
 		return 0;
+
+	pm_runtime_get_sync(&client->adapter->dev);
 
 	driver = to_i2c_driver(dev->driver);
 	if (driver->remove) {
@@ -277,6 +284,7 @@ static int i2c_device_remove(struct device *dev)
 		client->driver = NULL;
 		i2c_set_clientdata(client, NULL);
 	}
+	pm_runtime_put(&client->adapter->dev);
 	return status;
 }
 
@@ -288,8 +296,11 @@ static void i2c_device_shutdown(struct device *dev)
 	if (!client || !dev->driver)
 		return;
 	driver = to_i2c_driver(dev->driver);
-	if (driver->shutdown)
+	if (driver->shutdown) {
+		pm_runtime_get_sync(&client->adapter->dev);
 		driver->shutdown(client);
+		pm_runtime_put(&client->adapter->dev);
+	}
 }
 
 #ifdef CONFIG_PM_SLEEP
@@ -1066,6 +1077,10 @@ exit_recovery:
 	bus_for_each_drv(&i2c_bus_type, NULL, adap, __process_new_adapter);
 	mutex_unlock(&core_lock);
 
+	pm_runtime_set_active(&adap->dev);
+	pm_runtime_no_callbacks(&adap->dev);
+	pm_runtime_enable(&adap->dev);
+
 	return 0;
 
 out_list:
@@ -1229,6 +1244,8 @@ void i2c_del_adapter(struct i2c_adapter *adap)
 			 "adapter [%s]\n", adap->name);
 		return;
 	}
+
+	pm_runtime_disable(&adap->dev);
 
 	/* Tell drivers about this removal */
 	mutex_lock(&core_lock);
@@ -1548,17 +1565,22 @@ int i2c_transfer(struct i2c_adapter *adap, struct i2c_msg *msgs, int num)
 		}
 #endif
 
+		pm_runtime_get_sync(&adap->dev);
 		if (in_atomic() || irqs_disabled()) {
 			ret = i2c_trylock_adapter(adap);
-			if (!ret)
+			if (!ret) {
+				pm_runtime_put(&adap->dev);
 				/* I2C activity is ongoing. */
 				return -EAGAIN;
+			}
 		} else {
 			i2c_lock_adapter(adap);
 		}
 
 		ret = __i2c_transfer(adap, msgs, num);
 		i2c_unlock_adapter(adap);
+
+		pm_runtime_put(&adap->dev);
 
 		return ret;
 	} else {
@@ -2298,6 +2320,7 @@ s32 i2c_smbus_xfer(struct i2c_adapter *adapter, u16 addr, unsigned short flags,
 
 	if (adapter->algo->smbus_xfer) {
 		i2c_lock_adapter(adapter);
+		pm_runtime_get_sync(&adapter->dev);
 
 		/* Retry automatically on arbitration loss */
 		orig_jiffies = jiffies;
@@ -2311,6 +2334,8 @@ s32 i2c_smbus_xfer(struct i2c_adapter *adapter, u16 addr, unsigned short flags,
 				       orig_jiffies + adapter->timeout))
 				break;
 		}
+
+		pm_runtime_put(&adapter->dev);
 		i2c_unlock_adapter(adapter);
 
 		if (res != -EOPNOTSUPP || !adapter->algo->master_xfer)
