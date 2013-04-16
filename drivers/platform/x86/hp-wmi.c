@@ -35,6 +35,7 @@
 #include <linux/input/sparse-keymap.h>
 #include <linux/platform_device.h>
 #include <linux/acpi.h>
+#include <linux/dmi.h>
 #include <linux/rfkill.h>
 #include <linux/string.h>
 
@@ -865,6 +866,17 @@ static int hp_wmi_resume_handler(struct device *device)
 	return 0;
 }
 
+static struct dmi_system_id __initdata tx2_dmi_table[] = {
+	{
+		.ident = "tx2",
+		.matches = {
+		        DMI_MATCH(DMI_SYS_VENDOR, "Hewlett-Packard"),
+			DMI_MATCH(DMI_PRODUCT_NAME, "tx2"),
+		},
+	},
+	{ }
+};
+
 static int __init hp_wmi_init(void)
 {
 	int err;
@@ -876,8 +888,10 @@ static int __init hp_wmi_init(void)
 		if (err)
 			return err;
 
-		//Enable magic for hotkeys that run on the SMBus
-		ec_write(0xe6,0x6e);
+		if (dmi_check_system(tx2_dmi_table)) {
+			pr_info("Configuring EC to enable bezel buttons\n");
+			ec_write(0xe6,0x6e);
+		}
 	}
 
 	if (bios_capable) {
