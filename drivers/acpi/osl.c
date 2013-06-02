@@ -835,7 +835,9 @@ void acpi_os_stall(u32 us)
  */
 u64 acpi_os_get_timer(void)
 {
-	return ktime_to_ns(ktime_get()) / 100;
+	u64 t = ktime_to_ns(ktime_get());
+	do_div(t, 100);
+	return t;
 }
 
 acpi_status acpi_os_read_port(acpi_io_address port, u32 * value, u32 width)
