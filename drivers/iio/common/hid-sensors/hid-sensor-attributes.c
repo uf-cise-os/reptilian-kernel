@@ -199,9 +199,10 @@ int hid_sensor_write_samp_freq_value(struct hid_sensor_common *st,
 {
 	s32 value;
 	int ret;
+	s32 current_value = 0;
 
 	if (val1 < 0 || val2 < 0)
-		ret = -EINVAL;
+		return -EINVAL;
 
 	value = val1 * pow_10(6) + val2;
 	if (value) {
@@ -216,9 +217,19 @@ int hid_sensor_write_samp_freq_value(struct hid_sensor_common *st,
 		st->poll.report_id,
 		st->poll.index, value);
 	if (ret < 0 || value < 0)
-		ret = -EINVAL;
-
-	return ret;
+		return -EINVAL;
+	ret = sensor_hub_get_feature(st->hsdev,
+		st->poll.report_id,
+		st->poll.index, &current_value);
+	if (ret < 0) {
+		printk(KERN_ERR "sensor_hub_get_feature failed\n");
+		return ret;
+	}
+	if (current_value != value) {
+		printk(KERN_ERR "sensor_hub_set_feature_failed\n");
+		return -EINVAL;
+	}
+	return 0;
 }
 EXPORT_SYMBOL(hid_sensor_write_samp_freq_value);
 
