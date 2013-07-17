@@ -40,8 +40,11 @@ KERNEL_DOTCONFIG_FILE := $(KBUILD_OUTPUT)/.config
 $(KERNEL_DOTCONFIG_FILE): $(KERNEL_CONFIG_FILE) | $(ACP)
 	$(copy-file-to-new-target)
 
+# bison is needed to build kernel and external modules from source
+BISON := $(HOST_OUT_EXECUTABLES)/bison$(HOST_EXECUTABLE_SUFFIX)
+
 BUILT_KERNEL_TARGET := $(KBUILD_OUTPUT)/arch/$(TARGET_ARCH)/boot/$(KERNEL_TARGET)
-$(INSTALLED_KERNEL_TARGET): $(KERNEL_DOTCONFIG_FILE)
+$(INSTALLED_KERNEL_TARGET): $(KERNEL_DOTCONFIG_FILE) $(BISON)
 	$(mk_kernel) oldnoconfig
 	$(mk_kernel) $(KERNEL_TARGET) $(if $(MOD_ENABLED),modules)
 	$(hide) $(ACP) -fp $(BUILT_KERNEL_TARGET) $@
