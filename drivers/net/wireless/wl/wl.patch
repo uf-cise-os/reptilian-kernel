@@ -18,8 +18,11 @@
        echo FALSE; \
      else \
        echo TRUE; \
-@@ -120,7 +120,7 @@ EXTRA_CFLAGS       += -I$(src)/src/include
+@@ -118,9 +118,10 @@ wl-objs            += src/wl/sys/wl_cfg80211.o
+
+ EXTRA_CFLAGS       += -I$(src)/src/include
  EXTRA_CFLAGS       += -I$(src)/src/wl/sys -I$(src)/src/wl/phy
++EXTRA_CFLAGS       += -DBRCM_WLAN_IFNAME='wlan%d'
  #EXTRA_CFLAGS       += -DBCMDBG_ASSERT
  
 -EXTRA_LDFLAGS      := $(src)/lib/wlc_hybrid.o_shipped
