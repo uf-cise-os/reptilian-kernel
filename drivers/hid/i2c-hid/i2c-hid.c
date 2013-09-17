@@ -43,6 +43,7 @@
 #define I2C_HID_STARTED		(1 << 0)
 #define I2C_HID_RESET_PENDING	(1 << 1)
 #define I2C_HID_READ_PENDING	(1 << 2)
+#define I2C_HID_DISABLED	(1 << 3)
 
 #define I2C_HID_PWR_ON		0x00
 #define I2C_HID_PWR_SLEEP	0x01
@@ -110,6 +111,10 @@ static const struct i2c_hid_cmd hid_get_report_cmd =	{ I2C_HID_CMD(0x02) };
 static const struct i2c_hid_cmd hid_set_report_cmd =	{ I2C_HID_CMD(0x03) };
 static const struct i2c_hid_cmd hid_set_power_cmd =	{ I2C_HID_CMD(0x08) };
 
+#ifdef CONFIG_PM_RUNTIME
+static struct device_attribute dev_attr_enable;
+#endif
+
 /*
  * These definitions are not used here, but are defined by the spec.
  * Keeping them here for documentation purposes.
@@ -121,6 +126,7 @@ static const struct i2c_hid_cmd hid_set_power_cmd =	{ I2C_HID_CMD(0x08) };
  */
 
 static DEFINE_MUTEX(i2c_hid_open_mut);
+static DEFINE_MUTEX(i2c_hid_pm_mut);
 
 /* The main device structure */
 struct i2c_hid {
@@ -911,6 +917,22 @@ static inline int i2c_hid_acpi_pdata(struct i2c_client *client,
 }
 #endif
 
+static int i2c_hid_sysfs_init(struct device *dev)
+{
+	int ret = 0;
+#ifdef CONFIG_PM_RUNTIME
+	ret = device_create_file(dev, &dev_attr_enable);
+#endif
+	return ret;
+}
+
+static void i2c_hid_sysfs_destroy(struct device *dev)
+{
+#ifdef CONFIG_PM_RUNTIME
+	device_remove_file(dev, &dev_attr_enable);
+#endif
+}
+
 static int i2c_hid_probe(struct i2c_client *client,
 			 const struct i2c_device_id *dev_id)
 {
@@ -927,6 +949,10 @@ static int i2c_hid_probe(struct i2c_client *client,
 			"HID over i2c has not been provided an Int IRQ\n");
 		return -EINVAL;
 	}
+
+	ret = i2c_hid_sysfs_init(&client->dev);
+	if (ret < 0)
+		return ret;
 
 	ihid = kzalloc(sizeof(struct i2c_hid), GFP_KERNEL);
 	if (!ihid)
@@ -1020,6 +1046,8 @@ static int i2c_hid_remove(struct i2c_client *client)
 
 	pm_runtime_disable(&client->dev);
 
+	i2c_hid_sysfs_destroy(&client->dev);
+
 	hid = ihid->hid;
 	hid_destroy_device(hid);
 
@@ -1067,12 +1095,21 @@ static int i2c_hid_resume(struct device *dev)
 static int i2c_hid_runtime_suspend(struct device *dev)
 {
 	struct i2c_client *client = to_i2c_client(dev);
+	struct i2c_hid *ihid = i2c_get_clientdata(client);
 
-	disable_irq(client->irq);
-	if (device_may_wakeup(&client->dev))
-		enable_irq_wake(client->irq);
+	mutex_lock(&i2c_hid_pm_mut);
 
-	i2c_hid_set_power(client, I2C_HID_PWR_SLEEP);
+	if (!test_bit(I2C_HID_DISABLED, &ihid->flags)) {
+		disable_irq(client->irq);
+		if (device_may_wakeup(&client->dev))
+			enable_irq_wake(client->irq);
+
+		i2c_hid_set_power(client, I2C_HID_PWR_SLEEP);
+
+		set_bit(I2C_HID_DISABLED, &ihid->flags);
+	}
+
+	mutex_unlock(&i2c_hid_pm_mut);
 
 	return 0;
 }
@@ -1080,15 +1117,52 @@ static int i2c_hid_runtime_suspend(struct device *dev)
 static int i2c_hid_runtime_resume(struct device *dev)
 {
 	struct i2c_client *client = to_i2c_client(dev);
+	struct i2c_hid *ihid = i2c_get_clientdata(client);
 
-	i2c_hid_set_power(client, I2C_HID_PWR_ON);
+	mutex_lock(&i2c_hid_pm_mut);
 
-	if (device_may_wakeup(&client->dev))
-		disable_irq_wake(client->irq);
-	enable_irq(client->irq);
+	if (test_bit(I2C_HID_DISABLED, &ihid->flags)) {
+		i2c_hid_set_power(client, I2C_HID_PWR_ON);
+
+		if (device_may_wakeup(&client->dev))
+			disable_irq_wake(client->irq);
+		enable_irq(client->irq);
+
+		clear_bit(I2C_HID_DISABLED, &ihid->flags);
+	}
+
+	mutex_unlock(&i2c_hid_pm_mut);
 
 	return 0;
 }
+
+static ssize_t i2c_hid_enable_show(struct device *dev,
+				   struct device_attribute *attr, char *buf)
+{
+	struct i2c_client *client = to_i2c_client(dev);
+	struct i2c_hid *ihid = i2c_get_clientdata(client);
+
+	return snprintf(buf, PAGE_SIZE, "%d\n", !test_bit(I2C_HID_DISABLED, &ihid->flags));
+}
+
+static ssize_t i2c_hid_enable_store(struct device *dev,
+				    struct device_attribute *attr,
+				    const char *buf, size_t n)
+{
+	unsigned long val;
+	if (kstrtoul(buf, 10, &val) < 0)
+		return -EINVAL;
+
+	if (val)
+		i2c_hid_runtime_resume(dev);
+	else
+		i2c_hid_runtime_suspend(dev);
+
+	return n;
+}
+
+static DEVICE_ATTR(enable, S_IRUSR|S_IWUSR,
+		   i2c_hid_enable_show, i2c_hid_enable_store);
 #endif
 
 static const struct dev_pm_ops i2c_hid_pm = {
