@@ -80,6 +80,10 @@ static const char * const iio_modifier_names[] = {
 	[IIO_MOD_LIGHT_RED] = "red",
 	[IIO_MOD_LIGHT_GREEN] = "green",
 	[IIO_MOD_LIGHT_BLUE] = "blue",
+	[IIO_MOD_QUATERNION_X] = "quat_x",
+	[IIO_MOD_QUATERNION_Y] = "quat_y",
+	[IIO_MOD_QUATERNION_Z] = "quat_z",
+	[IIO_MOD_QUATERNION_W] = "quat_w",
 };
 
 /* relies on pairs of these shared then separate */
