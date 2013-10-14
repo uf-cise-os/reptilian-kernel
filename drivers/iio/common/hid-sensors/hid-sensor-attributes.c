@@ -389,7 +389,7 @@ int hid_sensor_parse_common_attributes(struct hid_sensor_hub_device *hsdev,
 
 	sensor_hub_input_get_attribute_info(hsdev,
 					HID_FEATURE_REPORT, usage_id,
-					HID_USAGE_SENSOR_PROY_POWER_STATE,
+					HID_USAGE_SENSOR_PROT_POWER_STATE,
 					&st->power_state);
 
 	sensor_hub_input_get_attribute_info(hsdev,
@@ -397,11 +397,17 @@ int hid_sensor_parse_common_attributes(struct hid_sensor_hub_device *hsdev,
 			HID_USAGE_SENSOR_PROP_SENSITIVITY_ABS,
 			 &st->sensitivity);
 
-	hid_dbg(hsdev->hdev, "common attributes: %x:%x, %x:%x, %x:%x %x:%x\n",
+	sensor_hub_input_get_attribute_info(hsdev,
+				HID_FEATURE_REPORT, usage_id,
+				HID_USAGE_SENSOR_PROP_SENSOR_CONNECTION_TYPE,
+				&st->conn_type);
+
+	hid_dbg(hsdev->hdev, "common attributes: %x:%x, %x:%x, %x:%x %x:%x %x:%x\n",
 			st->poll.index, st->poll.report_id,
 			st->report_state.index, st->report_state.report_id,
 			st->power_state.index, st->power_state.report_id,
-			st->sensitivity.index, st->sensitivity.report_id);
+			st->sensitivity.index, st->sensitivity.report_id,
+			st->conn_type.index, st->conn_type.report_id);
 
 	return 0;
 }
