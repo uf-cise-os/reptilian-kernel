@@ -28,6 +28,10 @@
 #include <linux/iio/sysfs.h>
 #include "hid-sensor-trigger.h"
 
+static int hid_sensor_conn_type = HID_USAGE_SENSOR_PROP_CONNEC_TYPE_PC_INT_ENUM;
+module_param(hid_sensor_conn_type, int, 0644);
+MODULE_PARM_DESC(hid_sensor_conn_type, "HID SENSOR CONNECT TYPE (1 to 3).");
+
 static int hid_sensor_data_rdy_trigger_set_state(struct iio_trigger *trig,
 						bool state)
 {
@@ -60,6 +64,10 @@ static int hid_sensor_data_rdy_trigger_set_state(struct iio_trigger *trig,
 	sensor_hub_get_feature(st->hsdev, st->power_state.report_id,
 					st->power_state.index,
 					&power_state_val);
+
+	sensor_hub_set_feature(st->hsdev, st->conn_type.report_id,
+					st->conn_type.index,
+					hid_sensor_conn_type);
 
 	return 0;
 }
