@@ -72,13 +72,20 @@ endif
 # rules to get source of Broadcom 802.11a/b/g/n hybrid device driver
 # based on broadcomsetup.sh of Kyle Evans
 WL_ENABLED := $(shell grep ^CONFIG_WL=[my] $(KERNEL_CONFIG_FILE))
-WL_PATH := drivers/net/wireless/wl
-WL_SRC := $(KERNEL_DIR)/$(WL_PATH)/hybrid-portsrc_x86_32-v5_100_82_112.tar.gz
-$(WL_SRC): $(KERNEL_DIR)/$(WL_PATH)/wl.patch
+WL_PATH := $(KERNEL_DIR)/drivers/net/wireless/wl
+ifeq (,$(shell grep ^CONFIG_X86_32=y $(KERNEL_CONFIG_FILE)))
+WL_SRC := $(WL_PATH)/hybrid-v35_64-nodebug-pcoem-6_30_223_141.tar.gz
+else
+WL_SRC := $(WL_PATH)/hybrid-v35-nodebug-pcoem-6_30_223_141.tar.gz
+endif
+$(WL_SRC):
 	@echo Downloading $(@F)...
-	$(hide) curl http://www.broadcom.com/docs/linux_sta/$(@F) > $@ && tar zxf $@ -C $(@D) --overwrite && \
-		patch -p1 -d $(@D) -i $(<F)
-$(INSTALLED_KERNEL_TARGET): $(if $(WL_ENABLED),$(WL_SRC))
+	$(hide) curl http://www.broadcom.com/docs/linux_sta/$(@F) > $@
+$(WL_PATH)/Makefile : $(WL_SRC) $(wildcard $(WL_PATH)/*.patch)
+	$(hide) tar zxf $< -C $(@D) --overwrite && \
+		patch -p5 -d $(@D) -i wl.patch && \
+		patch -p1 -d $(@D) -i linux-recent.patch
+$(INSTALLED_KERNEL_TARGET): $(if $(WL_ENABLED),$(WL_PATH)/Makefile)
 
 installclean: FILES += $(KBUILD_OUTPUT) $(INSTALLED_KERNEL_TARGET)
 
