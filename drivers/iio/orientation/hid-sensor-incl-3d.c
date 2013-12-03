@@ -57,28 +57,28 @@ static const struct iio_chan_spec incl_3d_channels[] = {
 		.type = IIO_INCLI,
 		.modified = 1,
 		.channel2 = IIO_MOD_X,
-		.info_mask = IIO_CHAN_INFO_OFFSET_SHARED_BIT |
-		IIO_CHAN_INFO_SCALE_SHARED_BIT |
-		IIO_CHAN_INFO_SAMP_FREQ_SHARED_BIT |
-		IIO_CHAN_INFO_HYSTERESIS_SHARED_BIT,
+		.info_mask_shared_by_type = BIT(IIO_CHAN_INFO_OFFSET) |
+		BIT(IIO_CHAN_INFO_SCALE) |
+		BIT(IIO_CHAN_INFO_SAMP_FREQ) |
+		BIT(IIO_CHAN_INFO_HYSTERESIS),
 		.scan_index = CHANNEL_SCAN_INDEX_X,
 	}, {
 		.type = IIO_INCLI,
 		.modified = 1,
 		.channel2 = IIO_MOD_Y,
-		.info_mask = IIO_CHAN_INFO_OFFSET_SHARED_BIT |
-		IIO_CHAN_INFO_SCALE_SHARED_BIT |
-		IIO_CHAN_INFO_SAMP_FREQ_SHARED_BIT |
-		IIO_CHAN_INFO_HYSTERESIS_SHARED_BIT,
+		.info_mask_shared_by_type = BIT(IIO_CHAN_INFO_OFFSET) |
+		BIT(IIO_CHAN_INFO_SCALE) |
+		BIT(IIO_CHAN_INFO_SAMP_FREQ) |
+		BIT(IIO_CHAN_INFO_HYSTERESIS),
 		.scan_index = CHANNEL_SCAN_INDEX_Y,
 	}, {
 		.type = IIO_INCLI,
 		.modified = 1,
 		.channel2 = IIO_MOD_Z,
-		.info_mask = IIO_CHAN_INFO_OFFSET_SHARED_BIT |
-		IIO_CHAN_INFO_SCALE_SHARED_BIT |
-		IIO_CHAN_INFO_SAMP_FREQ_SHARED_BIT |
-		IIO_CHAN_INFO_HYSTERESIS_SHARED_BIT,
+		.info_mask_shared_by_type = BIT(IIO_CHAN_INFO_OFFSET) |
+		BIT(IIO_CHAN_INFO_SCALE) |
+		BIT(IIO_CHAN_INFO_SAMP_FREQ) |
+		BIT(IIO_CHAN_INFO_HYSTERESIS),
 		.scan_index = CHANNEL_SCAN_INDEX_Z,
 	}
 };
@@ -118,6 +118,7 @@ static int incl_3d_read_raw(struct iio_dev *indio_dev,
 				HID_USAGE_SENSOR_INCLINOMETER_3D, address,
 				report_id);
 		else {
+			*val = 0;
 			return -EINVAL;
 		}
 		ret_type = IIO_VAL_INT;
@@ -305,9 +306,10 @@ static int hid_incl_3d_probe(struct platform_device *pdev)
 	struct iio_chan_spec *channels;
 
 	indio_dev = iio_device_alloc(sizeof(struct incl_3d_state));
-	if (indio_dev == NULL)
-		return -ENOMEM;
-
+	if (indio_dev == NULL) {
+		ret = -ENOMEM;
+		goto error_ret;
+	}
 	platform_set_drvdata(pdev, indio_dev);
 
 	incl_state = iio_priv(indio_dev);
@@ -319,14 +321,15 @@ static int hid_incl_3d_probe(struct platform_device *pdev)
 				&incl_state->common_attributes);
 	if (ret) {
 		dev_err(&pdev->dev, "failed to setup common attributes\n");
-		return ret;
+		goto error_free_dev;
 	}
 
 	channels = kmemdup(incl_3d_channels, sizeof(incl_3d_channels),
 			   GFP_KERNEL);
 	if (!channels) {
+		ret = -ENOMEM;
 		dev_err(&pdev->dev, "failed to duplicate channels\n");
-		return -ENOMEM;
+		goto error_free_dev;
 	}
 
 	ret = incl_3d_parse_report(pdev, hsdev, channels,
@@ -352,7 +355,7 @@ static int hid_incl_3d_probe(struct platform_device *pdev)
 	incl_state->common_attributes.data_ready = false;
 	ret = hid_sensor_setup_trigger(indio_dev, name,
 					&incl_state->common_attributes);
-	if (ret) {
+	if (ret < 0) {
 		dev_err(&pdev->dev, "trigger setup failed\n");
 		goto error_unreg_buffer_funcs;
 	}
@@ -369,12 +372,12 @@ static int hid_incl_3d_probe(struct platform_device *pdev)
 	ret = sensor_hub_register_callback(hsdev,
 					HID_USAGE_SENSOR_INCLINOMETER_3D,
 					&incl_state->callbacks);
-	if (ret) {
+	if (ret < 0) {
 		dev_err(&pdev->dev, "callback reg failed\n");
 		goto error_iio_unreg;
 	}
 
-	return 0;
+	return ret;
 
 error_iio_unreg:
 	iio_device_unregister(indio_dev);
@@ -384,6 +387,9 @@ error_unreg_buffer_funcs:
 	iio_triggered_buffer_cleanup(indio_dev);
 error_free_dev_mem:
 	kfree(indio_dev->channels);
+error_free_dev:
+	iio_device_free(indio_dev);
+error_ret:
 	return ret;
 }
 
