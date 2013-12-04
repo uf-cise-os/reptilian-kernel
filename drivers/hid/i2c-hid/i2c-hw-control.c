@@ -87,6 +87,12 @@ int i2c_sensor_hw_init(struct i2c_client *client)
 			gpio_export(gpio_psh_rst, 1);
 			gpio_direction_output(gpio_psh_rst, 1);
 			gpio_set_value(gpio_psh_rst, 1);
+
+			/*
+			 * A small delay is needed after reset.
+			 * Without a delay, I2C communication fails.
+			 */
+			usleep_range(10000, 12000);
 		}
 	}
 	return 0;
