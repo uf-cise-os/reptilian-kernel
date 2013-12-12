@@ -32,4 +32,25 @@ struct i2c_hid_platform_data {
 	u16 hid_descriptor_address;
 };
 
+/**
+ * struct i2c_hid_hw_data - used in hid over i2c implementation.
+ * @hw_init: Function pointer points to platform specific init function.
+ * @hw_reset: Function pointer points to platform specific reset function.
+ * @hw_suspend: Function pointer points to platform specific suspend function.
+ * @hw_resume: Function pointer points to platform specific resume function.
+ *
+ */
+struct i2c_hid_hw_data {
+	int (*hw_init)(struct i2c_client *client);
+	int (*hw_reset)(struct i2c_client *client);
+	int (*hw_suspend)(struct i2c_client *client);
+	int (*hw_resume)(struct i2c_client *client);
+};
+
+#ifdef CONFIG_I2C_HIDHW
+int i2c_set_hwdata(struct i2c_client *client, struct i2c_hid_hw_data *ihid);
+#else
+inline int i2c_set_hwdata(struct i2c_client *client,
+			struct i2c_hid_hw_data *ihid) { return 0; }
+#endif
 #endif /* __LINUX_I2C_HID_H */

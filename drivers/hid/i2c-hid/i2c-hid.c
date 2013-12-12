@@ -36,7 +36,8 @@
 #include <linux/hid.h>
 #include <linux/mutex.h>
 #include <linux/acpi.h>
-
+#include <linux/gpio.h>
+#include <linux/acpi_gpio.h>
 #include <linux/i2c/i2c-hid.h>
 
 /* flags */
@@ -149,6 +150,7 @@ struct i2c_hid {
 	wait_queue_head_t	wait;		/* For waiting the interrupt */
 
 	struct i2c_hid_platform_data pdata;
+	struct i2c_hid_hw_data hw_data;		/* HW specific function ptr */
 };
 
 static int __i2c_hid_command(struct i2c_client *client,
@@ -906,6 +908,7 @@ static int i2c_hid_acpi_pdata(struct i2c_client *client,
 static const struct acpi_device_id i2c_hid_acpi_match[] = {
 	{"ACPI0C50", 0 },
 	{"PNP0C50", 0 },
+	{"SMO91D0", 0 },
 	{ },
 };
 MODULE_DEVICE_TABLE(acpi, i2c_hid_acpi_match);
@@ -941,6 +944,7 @@ static int i2c_hid_probe(struct i2c_client *client,
 	struct hid_device *hid;
 	__u16 hidRegister;
 	struct i2c_hid_platform_data *platform_data = client->dev.platform_data;
+	struct i2c_hid_hw_data *hw_data = NULL;
 
 	dbg_hid("HID probe called for i2c 0x%02x\n", client->addr);
 
@@ -977,6 +981,16 @@ static int i2c_hid_probe(struct i2c_client *client,
 	ihid->wHIDDescRegister = cpu_to_le16(hidRegister);
 
 	init_waitqueue_head(&ihid->wait);
+	i2c_set_hwdata(ihid->client, &ihid->hw_data);
+	hw_data = &ihid->hw_data;
+	if (hw_data->hw_init) {
+		ret = hw_data->hw_init(client);
+		if (ret) {
+			dev_err(&client->dev,
+			"Platform specific init failed\n");
+			goto err;
+		}
+	}
 
 	/* we need to allocate the command buffer without knowing the maximum
 	 * size of the reports. Let's use HID_MIN_BUFFER_SIZE, then we do the
@@ -1015,6 +1029,7 @@ static int i2c_hid_probe(struct i2c_client *client,
 	snprintf(hid->name, sizeof(hid->name), "%s %04hX:%04hX",
 		 client->name, hid->vendor, hid->product);
 
+	i2c_hid_parse(hid);
 	ret = hid_add_device(hid);
 	if (ret) {
 		if (ret != -ENODEV)
@@ -1064,9 +1079,17 @@ static int i2c_hid_remove(struct i2c_client *client)
 #ifdef CONFIG_PM_SLEEP
 static int i2c_hid_suspend(struct device *dev)
 {
+	int ret = 0;
 	struct i2c_client *client = to_i2c_client(dev);
+	struct i2c_hid *ihid = i2c_get_clientdata(client);
+	struct i2c_hid_hw_data *hw_data = &ihid->hw_data;
 
 	disable_irq(client->irq);
+	if (hw_data->hw_suspend) {
+		ret = hw_data->hw_suspend(client);
+		if (ret)
+			return ret;
+	}
 	if (device_may_wakeup(&client->dev))
 		enable_irq_wake(client->irq);
 
@@ -1078,11 +1101,18 @@ static int i2c_hid_suspend(struct device *dev)
 
 static int i2c_hid_resume(struct device *dev)
 {
-	int ret;
+	int ret = 0;
 	struct i2c_client *client = to_i2c_client(dev);
+	struct i2c_hid *ihid = i2c_get_clientdata(client);
+	struct i2c_hid_hw_data *hw_data = &ihid->hw_data;
 
 	enable_irq(client->irq);
 
+	if (hw_data->hw_resume) {
+		ret = hw_data->hw_resume(client);
+		if (ret)
+			return ret;
+	}
 	ret = i2c_hid_hwreset(client);
 	if (ret)
 		return ret;

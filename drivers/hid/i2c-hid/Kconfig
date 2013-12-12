@@ -15,4 +15,13 @@ config I2C_HID
 	  This support is also available as a module.  If so, the module
 	  will be called i2c-hid.
 
+config I2C_HIDHW
+	tristate "HID over I2C transport layer"
+	depends on INPUT
+	select HID
+	---help---
+	  Say Y here if you use a I2C STM sensor hub on BYT-M board.
+
+	  If unsure, say N.
+
 endmenu
