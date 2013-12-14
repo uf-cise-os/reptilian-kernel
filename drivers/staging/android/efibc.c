@@ -28,6 +28,7 @@
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 #include <linux/reboot.h>
+#include <linux/slab.h>
 
 #define LOADER_ENTRY_ONE_SHOT "LoaderEntryOneShot"
 #define LOADER_GUID EFI_GUID(0x4a67b082, 0x0a4c, 0x41cf, 0xb6, 0xc7, \

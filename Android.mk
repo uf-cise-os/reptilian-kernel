@@ -14,8 +14,9 @@ ifeq ($(TARGET_PREBUILT_KERNEL),)
 KERNEL_DIR ?= $(call my-dir)
 
 ifeq ($(TARGET_ARCH),x86)
+TARGET_KERNEL_ARCH ?= x86
 KERNEL_TARGET := bzImage
-TARGET_KERNEL_CONFIG ?= android-x86_defconfig
+TARGET_KERNEL_CONFIG ?= android-$(TARGET_KERNEL_ARCH)_defconfig
 endif
 ifeq ($(TARGET_ARCH),arm)
 KERNEL_TARGET := zImage
