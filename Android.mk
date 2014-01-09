@@ -38,7 +38,8 @@ FIRMWARE_ENABLED := $(shell grep ^CONFIG_FIRMWARE_IN_KERNEL=y $(KERNEL_CONFIG_FI
 # but I don't want to write a complex Android.mk to build kernel.
 # This is the simplest way I can think.
 KERNEL_DOTCONFIG_FILE := $(KBUILD_OUTPUT)/.config
-$(KERNEL_DOTCONFIG_FILE): $(KERNEL_CONFIG_FILE) | $(ACP)
+KERNEL_ARCH_CHANGED := $(if $(filter 0,$(shell grep -s ^$(if $(filter x86,$(TARGET_KERNEL_ARCH)),\#.)CONFIG_64BIT $(KERNEL_DOTCONFIG_FILE) | wc -l)),FORCE)
+$(KERNEL_DOTCONFIG_FILE): $(KERNEL_CONFIG_FILE) $(KERNEL_ARCH_CHANGED) | $(ACP)
 	$(copy-file-to-new-target)
 
 # bison is needed to build kernel and external modules from source
@@ -72,8 +73,8 @@ endif
 
 # rules to get source of Broadcom 802.11a/b/g/n hybrid device driver
 # based on broadcomsetup.sh of Kyle Evans
-WL_ENABLED := $(shell grep ^CONFIG_WL=[my] $(KERNEL_CONFIG_FILE))
 WL_PATH := $(KERNEL_DIR)/drivers/net/wireless/wl
+WL_ENABLED := $(if $(wildcard $(WL_PATH)),$(shell grep ^CONFIG_WL=[my] $(KERNEL_CONFIG_FILE)))
 ifeq (,$(shell grep ^CONFIG_X86_32=y $(KERNEL_CONFIG_FILE)))
 WL_SRC := $(WL_PATH)/hybrid-v35_64-nodebug-pcoem-6_30_223_141.tar.gz
 else
@@ -82,7 +83,7 @@ endif
 $(WL_SRC):
 	@echo Downloading $(@F)...
 	$(hide) curl http://www.broadcom.com/docs/linux_sta/$(@F) > $@
-$(WL_PATH)/Makefile : $(WL_SRC) $(wildcard $(WL_PATH)/*.patch)
+$(WL_PATH)/Makefile : $(WL_SRC) $(wildcard $(WL_PATH)/*.patch) $(KERNEL_ARCH_CHANGED)
 	$(hide) tar zxf $< -C $(@D) --overwrite && \
 		patch -p5 -d $(@D) -i wl.patch && \
 		patch -p1 -d $(@D) -i linux-recent.patch
