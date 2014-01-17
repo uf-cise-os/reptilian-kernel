@@ -367,6 +367,10 @@ int hid_sensor_parse_common_attributes(struct hid_sensor_hub_device *hsdev,
 
 	hid_sensor_get_reporting_interval(hsdev, usage_id, st);
 
+	/* Default unit of measure is milliseconds */
+	if (st->poll.units == 0)
+		st->poll.units = HID_USAGE_SENSOR_UNITS_MILLISECOND;
+
 	sensor_hub_input_get_attribute_info(hsdev,
 					HID_FEATURE_REPORT, usage_id,
 					HID_USAGE_SENSOR_PROP_REPORT_STATE,
