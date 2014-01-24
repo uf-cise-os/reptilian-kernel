@@ -24,6 +24,7 @@
 #include <linux/socket.h>
 #include <linux/skbuff.h>
 #include <linux/netlink.h>
+#include <linux/suspend.h>
 #include <net/sock.h>
 #include <net/net_namespace.h>
 
@@ -40,6 +41,21 @@ static LIST_HEAD(uevent_sock_list);
 
 /* This lock protects uevent_seqnum and uevent_sock_list */
 static DEFINE_MUTEX(uevent_sock_mutex);
+
+#ifdef CONFIG_PM_SLEEP
+struct uevent_buffered {
+	struct kobject *kobj;
+	struct kobj_uevent_env *env;
+	const char *action;
+	char *devpath;
+	char *subsys;
+	struct list_head buffer_list;
+};
+
+static DEFINE_MUTEX(uevent_buffer_mutex);
+static bool uevent_buffer;
+static LIST_HEAD(uevent_buffer_list);
+#endif
 
 /* the strings here must match the enum in include/linux/kobject.h */
 static const char *kobject_actions[] = {
@@ -323,9 +339,48 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 	else if (action == KOBJ_REMOVE)
 		kobj->state_remove_uevent_sent = 1;
 
+#ifdef CONFIG_PM_SLEEP
+	/*
+	 * Delivery of skb's to userspace processes waiting via
+	 * EPOLLWAKEUP will abort suspend.  Buffer events emitted when
+	 * there is no unfrozen userspace to receive them.
+	 */
+	mutex_lock(&uevent_buffer_mutex);
+	if (uevent_buffer) {
+		struct uevent_buffered *ub;
+		ub = kmalloc(sizeof(*ub), GFP_KERNEL);
+		if (!ub) {
+			retval = -ENOMEM;
+			mutex_unlock(&uevent_buffer_mutex);
+			goto exit;
+		}
 
-	if (kobject_deliver_uevent(kobj, env, action_string, devpath, subsystem))
-		goto exit;
+		ub->kobj = kobj;
+		ub->env = env;
+		ub->action = action_string;
+		ub->devpath = kstrdup(devpath, GFP_KERNEL);
+		ub->subsys = kstrdup(subsystem, GFP_KERNEL);
+
+		if (!ub->devpath || !ub->subsys) {
+			kfree(ub->devpath);
+			kfree(ub->action);
+			kfree(ub);
+			retval = -ENOMEM;
+			mutex_unlock(&uevent_buffer_mutex);
+			goto exit;
+		}
+
+		kobject_get(kobj);
+		list_add(&ub->buffer_list, &uevent_buffer_list);
+		env = NULL;
+	}
+	mutex_unlock(&uevent_buffer_mutex);
+#endif
+
+	if (env)
+		if (kobject_deliver_uevent(kobj, env, action_string, devpath,
+					   subsystem))
+			goto exit;
 
 exit:
 	kfree(devpath);
@@ -430,6 +485,35 @@ found:
 	kfree(ue_sk);
 }
 
+#ifdef CONFIG_PM_SLEEP
+int uevent_buffer_pm_notify(struct notifier_block *nb,
+			    unsigned long action, void *data)
+{
+	mutex_lock(&uevent_buffer_mutex);
+	if (action == PM_SUSPEND_PREPARE) {
+		uevent_buffer = true;
+	} else if (action == PM_POST_SUSPEND) {
+		struct uevent_buffered *ub, *tmp;
+		list_for_each_entry_safe(ub, tmp, &uevent_buffer_list,
+					 buffer_list) {
+			kobject_deliver_uevent(ub->kobj, ub->env, ub->action,
+					       ub->devpath, ub->subsys);
+
+			list_del(&ub->buffer_list);
+			kobject_put(ub->kobj);
+			kfree(ub->env);
+			kfree(ub->devpath);
+			kfree(ub->subsys);
+			kfree(ub);
+		}
+
+		uevent_buffer = false;
+	}
+	mutex_unlock(&uevent_buffer_mutex);
+	return 0;
+}
+#endif
+
 static struct pernet_operations uevent_net_ops = {
 	.init	= uevent_net_init,
 	.exit	= uevent_net_exit,
@@ -437,6 +521,9 @@ static struct pernet_operations uevent_net_ops = {
 
 static int __init kobject_uevent_init(void)
 {
+#ifdef CONFIG_PM_SLEEP
+	pm_notifier(uevent_buffer_pm_notify, 0);
+#endif
 	return register_pernet_subsys(&uevent_net_ops);
 }
 
