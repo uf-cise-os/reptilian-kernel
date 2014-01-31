@@ -919,4 +919,8 @@
 #define USB_VENDOR_ID_SIS	0x0457
 #define USB_DEVICE_ID_SIS_TS	0x1013
 
+#define USB_VENDOR_ID_INTEL_0           0x8086
+#define USB_VENDOR_ID_INTEL_1           0x8087
+#define USB_DEVICE_ID_INTEL_HID_SENSOR  0x09fa
+
 #endif
