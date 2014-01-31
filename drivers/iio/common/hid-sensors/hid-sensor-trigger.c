@@ -41,26 +41,34 @@ static int hid_sensor_data_rdy_trigger_set_state(struct iio_trigger *trig,
 
 	st->data_ready = state;
 	if (state) {
-		power_state_val =
-			HID_USAGE_SENSOR_PROP_POWER_STATE_D0_FULL_POWER_ENUM;
-		report_state_val =
-			HID_USAGE_SENSOR_PROP_REPORT_STATE_ALL_EVENTS_ENUM;
+		power_state_val = hid_sensor_get_usage_index(st->hsdev,
+			st->power_state.report_id,
+			st->power_state.index,
+			HID_USAGE_SENSOR_PROP_POWER_STATE_D0_FULL_POWER_ENUM);
+		report_state_val = hid_sensor_get_usage_index(st->hsdev,
+			st->report_state.report_id,
+			st->report_state.index,
+			HID_USAGE_SENSOR_PROP_REPORTING_STATE_ALL_EVENTS_ENUM);
 	} else {
-		power_state_val =
-			HID_USAGE_SENSOR_PROP_POWER_STATE_D1_LOW_POWER_ENUM;
-		report_state_val =
-			HID_USAGE_SENSOR_PROP_REPORT_STATE_NO_EVENTS_ENUM;
+		power_state_val = hid_sensor_get_usage_index(st->hsdev,
+			st->power_state.report_id,
+			st->power_state.index,
+			HID_USAGE_SENSOR_PROP_POWER_STATE_D1_LOW_POWER_ENUM);
+		report_state_val = hid_sensor_get_usage_index(st->hsdev,
+			st->report_state.report_id,
+			st->report_state.index,
+			HID_USAGE_SENSOR_PROP_REPORTING_STATE_NO_EVENTS_ENUM);
 	}
 	power_state_val += st->power_state.logical_minimum;
 	report_state_val += st->report_state.logical_minimum;
-
-	sensor_hub_set_feature(st->hsdev, st->report_state.report_id,
-					st->report_state.index,
-					report_state_val);
-
-	sensor_hub_set_feature(st->hsdev, st->power_state.report_id,
-					st->power_state.index,
-					power_state_val);
+	if (power_state_val >= 0)
+		sensor_hub_set_feature(st->hsdev, st->power_state.report_id,
+						st->power_state.index,
+						power_state_val);
+	if (report_state_val >= 0)
+		sensor_hub_set_feature(st->hsdev, st->report_state.report_id,
+						st->report_state.index,
+						report_state_val);
 
 	/* Some hubs require this read as a 'sync' point. */
 	sensor_hub_get_feature(st->hsdev, st->power_state.report_id,
