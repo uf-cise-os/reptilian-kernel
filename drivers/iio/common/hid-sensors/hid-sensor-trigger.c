@@ -51,6 +51,8 @@ static int hid_sensor_data_rdy_trigger_set_state(struct iio_trigger *trig,
 		report_state_val =
 			HID_USAGE_SENSOR_PROP_REPORT_STATE_NO_EVENTS_ENUM;
 	}
+	power_state_val += st->power_state.logical_minimum;
+	report_state_val += st->report_state.logical_minimum;
 
 	sensor_hub_set_feature(st->hsdev, st->report_state.report_id,
 					st->report_state.index,
