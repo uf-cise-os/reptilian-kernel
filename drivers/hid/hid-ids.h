@@ -923,4 +923,7 @@
 #define USB_VENDOR_ID_INTEL_1           0x8087
 #define USB_DEVICE_ID_INTEL_HID_SENSOR  0x09fa
 
+#define USB_VENDOR_ID_STM_0             0x0483
+#define USB_DEVICE_ID_STM_HID_SENSOR    0x91d1
+
 #endif
