@@ -20,5 +20,6 @@ obj-y += gyro/
 obj-y += frequency/
 obj-y += imu/
 obj-y += light/
+obj-y += pressure/
 obj-y += magnetometer/
 obj-y += orientation/

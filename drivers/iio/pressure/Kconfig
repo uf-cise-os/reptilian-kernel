@@ -1,0 +1,19 @@
+#
+# Pressure drivers
+#
+# When adding new entries keep the list in alphabetical order
+
+menu "Pressure sensors"
+
+config HID_SENSOR_PRESS
+	depends on HID_SENSOR_HUB
+	select IIO_BUFFER
+	select IIO_TRIGGERED_BUFFER
+	select HID_SENSOR_IIO_COMMON
+	select HID_SENSOR_IIO_TRIGGER
+	tristate "HID PRESS"
+	help
+	  Say yes here to build support for the HID SENSOR
+	  Pressure driver
+
+endmenu
