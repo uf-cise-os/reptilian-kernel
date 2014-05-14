@@ -664,7 +664,6 @@ int mei_cl_read_start(struct mei_cl *cl, size_t length)
 		goto err;
 
 	cb->fop_type = MEI_FOP_READ;
-	cl->read_cb = cb;
 	if (dev->hbuf_is_ready) {
 		dev->hbuf_is_ready = false;
 		if (mei_hbm_cl_flow_control_req(dev, cl)) {
@@ -675,6 +674,9 @@ int mei_cl_read_start(struct mei_cl *cl, size_t length)
 	} else {
 		list_add_tail(&cb->list, &dev->ctrl_wr_list.list);
 	}
+
+	cl->read_cb = cb;
+
 	return rets;
 err:
 	mei_io_cb_free(cb);
@@ -828,8 +830,16 @@ void mei_cl_all_read_wakeup(struct mei_device *dev)
 void mei_cl_all_write_clear(struct mei_device *dev)
 {
 	struct mei_cl_cb *cb, *next;
+	struct list_head *list;
 
-	list_for_each_entry_safe(cb, next, &dev->write_list.list, list) {
+	list = &dev->write_list.list;
+	list_for_each_entry_safe(cb, next, list, list) {
+		list_del(&cb->list);
+		mei_io_cb_free(cb);
+	}
+
+	list = &dev->write_waiting_list.list;
+	list_for_each_entry_safe(cb, next, list, list) {
 		list_del(&cb->list);
 		mei_io_cb_free(cb);
 	}
