@@ -35,3 +35,11 @@ config SENSORS_LIS3_I2C
 	  This driver can also be built as modules.  If so, the core module
 	  will be called lis3lv02d and a specific module for the I2C transport
 	  is called lis3lv02d_i2c.
+
+config SENSORS_LIS3_I2C_WMI
+	bool "Sensor used in Acer 1425P/1825PTZ (Tablet PC)"
+	depends on SENSORS_LIS3_I2C
+	default n
+	help
+	  Configuration parameter for laptops without regulators
+	  Device is present at 0x1d on i801 I2C SMBus

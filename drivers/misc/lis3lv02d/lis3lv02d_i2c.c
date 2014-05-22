@@ -39,12 +39,21 @@
 
 #define DRV_NAME	"lis3lv02d_i2c"
 
+/* Address to scan */
+#ifdef CONFIG_SENSORS_LIS3_I2C_WMI
+static const unsigned short normal_i2c[] = { 0x1D, I2C_CLIENT_END };
+#define LIS3_WITHOUT_REGULATORS
+#endif
+
+#ifndef LIS3_WITHOUT_REGULATORS
 static const char reg_vdd[]    = "Vdd";
 static const char reg_vdd_io[] = "Vdd_IO";
+#endif
 
 static int lis3_reg_ctrl(struct lis3lv02d *lis3, bool state)
 {
-	int ret;
+	int ret = 0;
+#ifndef LIS3_WITHOUT_REGULATORS
 	if (state == LIS3_REG_OFF) {
 		ret = regulator_bulk_disable(ARRAY_SIZE(lis3->regulators),
 					lis3->regulators);
@@ -54,6 +63,7 @@ static int lis3_reg_ctrl(struct lis3lv02d *lis3, bool state)
 		/* Chip needs time to wakeup. Not mentioned in datasheet */
 		usleep_range(10000, 20000);
 	}
+#endif
 	return ret;
 }
 
@@ -152,6 +162,7 @@ static int lis3lv02d_i2c_probe(struct i2c_client *client,
 			goto fail;
 	}
 
+#ifndef LIS3_WITHOUT_REGULATORS
 	lis3_dev.regulators[0].supply = reg_vdd;
 	lis3_dev.regulators[1].supply = reg_vdd_io;
 	ret = regulator_bulk_get(&client->dev,
@@ -159,6 +170,7 @@ static int lis3lv02d_i2c_probe(struct i2c_client *client,
 				 lis3_dev.regulators);
 	if (ret < 0)
 		goto fail;
+#endif
 
 	lis3_dev.pdata	  = pdata;
 	lis3_dev.bus_priv = client;
@@ -183,8 +195,10 @@ static int lis3lv02d_i2c_probe(struct i2c_client *client,
 	return 0;
 
 fail2:
+#ifndef LIS3_WITHOUT_REGULATORS
 	regulator_bulk_free(ARRAY_SIZE(lis3_dev.regulators),
 				lis3_dev.regulators);
+#endif
 fail:
 	if (pdata && pdata->release_resources)
 		pdata->release_resources();
@@ -202,8 +216,10 @@ static int lis3lv02d_i2c_remove(struct i2c_client *client)
 	lis3lv02d_joystick_disable(lis3);
 	lis3lv02d_remove_fs(&lis3_dev);
 
+#ifndef LIS3_WITHOUT_REGULATORS
 	regulator_bulk_free(ARRAY_SIZE(lis3->regulators),
 			    lis3_dev.regulators);
+#endif
 	return 0;
 }
 
@@ -256,6 +272,26 @@ static int lis3_i2c_runtime_resume(struct device *dev)
 }
 #endif /* CONFIG_PM_RUNTIME */
 
+#ifdef CONFIG_SENSORS_LIS3_I2C_WMI
+/* Return 0 if detection is successful, -ENODEV otherwise */
+static int lis3lv02d_i2c_detect(struct i2c_client *client,
+		struct i2c_board_info *info)
+{
+	int val;
+	struct i2c_adapter *adapter = client->adapter;
+
+	if (!i2c_check_functionality(adapter, I2C_FUNC_SMBUS_BYTE_DATA))
+		return -ENODEV;
+
+	val = i2c_smbus_read_byte_data(client, WHO_AM_I);
+	if (!((val & WAI_12B) || (val & WAI_8B)))
+		return -ENODEV;
+
+	strlcpy(info->type, "lis3lv02d", I2C_NAME_SIZE);
+	return 0;
+}
+#endif
+
 static const struct i2c_device_id lis3lv02d_id[] = {
 	{"lis3lv02d", LIS3LV02D},
 	{"lis331dlh", LIS331DLH},
@@ -282,6 +318,11 @@ static struct i2c_driver lis3lv02d_i2c_driver = {
 	.probe	= lis3lv02d_i2c_probe,
 	.remove	= lis3lv02d_i2c_remove,
 	.id_table = lis3lv02d_id,
+#ifdef CONFIG_SENSORS_LIS3_I2C_WMI
+	.class = I2C_CLASS_HWMON,
+	.detect = lis3lv02d_i2c_detect,
+	.address_list = normal_i2c,
+#endif
 };
 
 module_i2c_driver(lis3lv02d_i2c_driver);
