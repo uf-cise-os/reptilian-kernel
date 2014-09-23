@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2009-2013 The Android-x86 Open Source Project
+# Copyright (C) 2009-2014 The Android-x86 Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,10 +23,10 @@ KERNEL_TARGET := zImage
 TARGET_KERNEL_CONFIG ?= goldfish_defconfig
 endif
 
-KBUILD_OUTPUT := $(CURDIR)/$(TARGET_OUT_INTERMEDIATES)/kernel
+KBUILD_OUTPUT := $(abspath $(TARGET_OUT_INTERMEDIATES)/kernel)
 mk_kernel := + $(hide) $(MAKE) -C $(KERNEL_DIR) O=$(KBUILD_OUTPUT) ARCH=$(TARGET_ARCH) $(if $(SHOW_COMMANDS),V=1)
 ifneq ($(TARGET_ARCH),$(HOST_ARCH))
-mk_kernel += CROSS_COMPILE=$(CURDIR)/$(TARGET_TOOLS_PREFIX)
+mk_kernel += CROSS_COMPILE=$(abspath $(TARGET_TOOLS_PREFIX))
 endif
 
 KERNEL_CONFIG_FILE := $(if $(wildcard $(TARGET_KERNEL_CONFIG)),$(TARGET_KERNEL_CONFIG),$(KERNEL_DIR)/arch/$(TARGET_ARCH)/configs/$(TARGET_KERNEL_CONFIG))
@@ -50,7 +50,7 @@ $(INSTALLED_KERNEL_TARGET): $(KERNEL_DOTCONFIG_FILE) $(BISON)
 	$(mk_kernel) oldnoconfig
 	$(mk_kernel) $(KERNEL_TARGET) $(if $(MOD_ENABLED),modules)
 	$(hide) $(ACP) -fp $(BUILT_KERNEL_TARGET) $@
-	$(if $(FIRMWARE_ENABLED),$(mk_kernel) INSTALL_MOD_PATH=$(CURDIR)/$(TARGET_OUT) firmware_install)
+	$(if $(FIRMWARE_ENABLED),$(mk_kernel) INSTALL_MOD_PATH=$(abspath $(TARGET_OUT)) firmware_install)
 
 ifneq ($(MOD_ENABLED),)
 KERNEL_MODULES_DEP := $(firstword $(wildcard $(TARGET_OUT)/lib/modules/*/modules.dep))
@@ -59,14 +59,14 @@ KERNEL_MODULES_DEP := $(if $(KERNEL_MODULES_DEP),$(KERNEL_MODULES_DEP),$(TARGET_
 $(TARGET_OUT_INTERMEDIATES)/%.kmodule: $(INSTALLED_KERNEL_TARGET)
 	$(hide) cp -an $(EXTRA_KERNEL_MODULE_PATH_$*) $(TARGET_OUT_INTERMEDIATES)/$*.kmodule
 	@echo Building additional kernel module $*
-	$(mk_kernel) M=$(CURDIR)/$@ modules
+	$(mk_kernel) M=$(abspath $@) modules
 
 $(KERNEL_MODULES_DEP): $(INSTALLED_KERNEL_TARGET) $(patsubst %,$(TARGET_OUT_INTERMEDIATES)/%.kmodule,$(TARGET_EXTRA_KERNEL_MODULES))
 	$(hide) rm -rf $(TARGET_OUT)/lib/modules
-	$(mk_kernel) INSTALL_MOD_PATH=$(CURDIR)/$(TARGET_OUT) modules_install
+	$(mk_kernel) INSTALL_MOD_PATH=$(abspath $(TARGET_OUT)) modules_install
 	+ $(hide) for kmod in $(TARGET_EXTRA_KERNEL_MODULES) ; do \
 	        echo Installing additional kernel module $${kmod} ; \
-	        $(subst +,,$(subst $(hide),,$(mk_kernel))) INSTALL_MOD_PATH=$(CURDIR)/$(TARGET_OUT) M=$(CURDIR)/$(TARGET_OUT_INTERMEDIATES)/$${kmod}.kmodule modules_install ; \
+	        $(subst +,,$(subst $(hide),,$(mk_kernel))) INSTALL_MOD_PATH=$(abspath $(TARGET_OUT)) M=$(abspath $(TARGET_OUT_INTERMEDIATES))/$${kmod}.kmodule modules_install ; \
 	done
 	$(hide) rm -f $(TARGET_OUT)/lib/modules/*/{build,source}
 endif
