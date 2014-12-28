@@ -10965,7 +10965,7 @@ check_crtc_state(struct drm_device *dev)
 
 		if (active &&
 		    !intel_pipe_config_compare(dev, &crtc->config, &pipe_config)) {
-			WARN(1, "pipe state doesn't match!\n");
+			DRM_DEBUG_KMS("pipe state doesn't match!\n");
 			intel_dump_pipe_config(crtc, &pipe_config,
 					       "[hw state]");
 			intel_dump_pipe_config(crtc, &crtc->config,
