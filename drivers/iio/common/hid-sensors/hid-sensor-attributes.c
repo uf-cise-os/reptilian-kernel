@@ -199,9 +199,10 @@ int hid_sensor_write_samp_freq_value(struct hid_sensor_common *st,
 {
 	s32 value;
 	int ret;
+	s32 current_value = 0;
 
 	if (val1 < 0 || val2 < 0)
-		ret = -EINVAL;
+		return -EINVAL;
 
 	value = val1 * pow_10(6) + val2;
 	if (value) {
@@ -216,9 +217,19 @@ int hid_sensor_write_samp_freq_value(struct hid_sensor_common *st,
 		st->poll.report_id,
 		st->poll.index, value);
 	if (ret < 0 || value < 0)
-		ret = -EINVAL;
-
-	return ret;
+		return -EINVAL;
+	ret = sensor_hub_get_feature(st->hsdev,
+		st->poll.report_id,
+		st->poll.index, &current_value);
+	if (ret < 0) {
+		printk(KERN_ERR "sensor_hub_get_feature failed\n");
+		return ret;
+	}
+	if (current_value != value) {
+		printk(KERN_ERR "sensor_hub_set_feature_failed\n");
+		return -EINVAL;
+	}
+	return 0;
 }
 EXPORT_SYMBOL(hid_sensor_write_samp_freq_value);
 
@@ -367,6 +378,10 @@ int hid_sensor_parse_common_attributes(struct hid_sensor_hub_device *hsdev,
 
 	hid_sensor_get_reporting_interval(hsdev, usage_id, st);
 
+	/* Default unit of measure is milliseconds */
+	if (st->poll.units == 0)
+		st->poll.units = HID_USAGE_SENSOR_UNITS_MILLISECOND;
+
 	sensor_hub_input_get_attribute_info(hsdev,
 					HID_FEATURE_REPORT, usage_id,
 					HID_USAGE_SENSOR_PROP_REPORT_STATE,
@@ -374,7 +389,7 @@ int hid_sensor_parse_common_attributes(struct hid_sensor_hub_device *hsdev,
 
 	sensor_hub_input_get_attribute_info(hsdev,
 					HID_FEATURE_REPORT, usage_id,
-					HID_USAGE_SENSOR_PROY_POWER_STATE,
+					HID_USAGE_SENSOR_PROT_POWER_STATE,
 					&st->power_state);
 
 	sensor_hub_input_get_attribute_info(hsdev,
@@ -382,11 +397,17 @@ int hid_sensor_parse_common_attributes(struct hid_sensor_hub_device *hsdev,
 			HID_USAGE_SENSOR_PROP_SENSITIVITY_ABS,
 			 &st->sensitivity);
 
-	hid_dbg(hsdev->hdev, "common attributes: %x:%x, %x:%x, %x:%x %x:%x\n",
+	sensor_hub_input_get_attribute_info(hsdev,
+				HID_FEATURE_REPORT, usage_id,
+				HID_USAGE_SENSOR_PROP_SENSOR_CONNECTION_TYPE,
+				&st->conn_type);
+
+	hid_dbg(hsdev->hdev, "common attributes: %x:%x, %x:%x, %x:%x %x:%x %x:%x\n",
 			st->poll.index, st->poll.report_id,
 			st->report_state.index, st->report_state.report_id,
 			st->power_state.index, st->power_state.report_id,
-			st->sensitivity.index, st->sensitivity.report_id);
+			st->sensitivity.index, st->sensitivity.report_id,
+			st->conn_type.index, st->conn_type.report_id);
 
 	return 0;
 }
