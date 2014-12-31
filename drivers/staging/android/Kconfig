@@ -21,7 +21,7 @@ config ANDROID_BINDER_IPC
 
 config ANDROID_BINDER_IPC_32BIT
 	bool
-	depends on !64BIT && ANDROID_BINDER_IPC
+	depends on ANDROID_BINDER_IPC
 	default y
 	---help---
 	  The Binder API has been changed to support both 32 and 64bit
