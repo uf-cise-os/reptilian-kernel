@@ -1,6 +1,6 @@
 --- a/drivers/net/wireless/wl/Makefile
 +++ b/drivers/net/wireless/wl/Makefile
-@@ -126,7 +126,7 @@
+@@ -145,7 +145,7 @@
  EXTRA_CFLAGS       += -I$(src)/src/shared/bcmwifi/include
  #EXTRA_CFLAGS       += -DBCMDBG_ASSERT
  
@@ -11,7 +11,7 @@
  KBUILD_DIR         ?= $(KBASE)/build
 --- a/drivers/net/wireless/wl/src/wl/sys/wl_linux.c
 +++ b/drivers/net/wireless/wl/src/wl/sys/wl_linux.c
-@@ -235,7 +235,7 @@
+@@ -217,7 +217,7 @@
  #define to_str(s) #s
  #define quote_str(s) to_str(s)
  
@@ -20,11 +20,9 @@
  
  static char intf_name[IFNAMSIZ] = quote_str(BRCM_WLAN_IFNAME);
  
-diff --git a/drivers/net/wireless/wl/src/wl/sys/wl_linux.c b/drivers/net/wireless/wl/src/wl/sys/wl_linux.c
-index b23face..318ab63 100644
 --- a/drivers/net/wireless/wl/src/wl/sys/wl_linux.c
 +++ b/drivers/net/wireless/wl/src/wl/sys/wl_linux.c
-@@ -2045,8 +2045,8 @@ wl_osl_pcie_rc(struct wl_info *wl, uint op, int param)
+@@ -2053,8 +2053,8 @@ wl_osl_pcie_rc(struct wl_info *wl, uint op, int param)
  void
  wl_dump_ver(wl_info_t *wl, struct bcmstrbuf *b)
  {
@@ -35,3 +33,16 @@ index b23face..318ab63 100644
  }
  
  #if defined(BCMDBG)
+--- a/drivers/net/wireless/wl/src/wl/sys/wl_linux.c
++++ b/drivers/net/wireless/wl/src/wl/sys/wl_linux.c
+@@ -2165,8 +2165,8 @@ wl_start(struct sk_buff *skb, struct net_device *dev)
+ 	wlif = WL_DEV_IF(dev);
+ 	wl = WL_INFO(dev);
+ 
++	skb->prev = NULL;
+ 	if (WL_ALL_PASSIVE_ENAB(wl) || (WL_RTR() && WL_CONFIG_SMP())) {
+-		skb->prev = NULL;
+ 
+ 		TXQ_LOCK(wl);
+ 
+
