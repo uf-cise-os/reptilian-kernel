@@ -11,42 +11,24 @@
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
  ******************************************************************************/
 
-//============================================================
-// include files
-//============================================================
 #include "odm_precomp.h"
 
-
-
-void
-odm_PathDiversityInit(
-	IN	void *	pDM_VOID
-)
+void odm_PathDiversityInit(void *pDM_VOID)
 {
 	PDM_ODM_T		pDM_Odm = (PDM_ODM_T)pDM_VOID;
-	if(!(pDM_Odm->SupportAbility & ODM_BB_PATH_DIV))
-	{
-		ODM_RT_TRACE(pDM_Odm, ODM_COMP_PATH_DIV,ODM_DBG_LOUD,("Return: Not Support PathDiv\n"));
-		return;
-	}
+
+	if (!(pDM_Odm->SupportAbility & ODM_BB_PATH_DIV))
+		ODM_RT_TRACE(pDM_Odm, ODM_COMP_PATH_DIV, ODM_DBG_LOUD,
+			     ("Return: Not Support PathDiv\n"));
 }
 
-void
-odm_PathDiversity(
-	IN	void *	pDM_VOID
-)
+void odm_PathDiversity(void *pDM_VOID)
 {
 	PDM_ODM_T		pDM_Odm = (PDM_ODM_T)pDM_VOID;
-	if(!(pDM_Odm->SupportAbility & ODM_BB_PATH_DIV))
-	{
-		ODM_RT_TRACE(pDM_Odm, ODM_COMP_PATH_DIV,ODM_DBG_LOUD,("Return: Not Support PathDiv\n"));
-		return;
-	}
+
+	if (!(pDM_Odm->SupportAbility & ODM_BB_PATH_DIV))
+		ODM_RT_TRACE(pDM_Odm, ODM_COMP_PATH_DIV, ODM_DBG_LOUD,
+			     ("Return: Not Support PathDiv\n"));
 }

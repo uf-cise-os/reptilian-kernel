@@ -11,16 +11,11 @@
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
  ******************************************************************************/
 /******************************************************************************
  *
  *
- * Module:	rtl8192c_rf6052.c	( Source C File)
+ * Module:	rtl8192c_rf6052.c	(Source C File)
  *
  * Note:	Provide RF 6052 series relative API.
  *
@@ -34,7 +29,7 @@
  * Data			Who		Remark
  *
  * 09/25/2008	MHC		Create initial version.
- * 11/05/2008 	MHC		Add API for tw power setting.
+ * 11/05/2008	MHC		Add API for tw power setting.
  *
  *
 ******************************************************************************/
@@ -50,9 +45,7 @@
 
 
 /*------------------------Define local variable------------------------------*/
-// 2008/11/20 MH For Debug only, RF
-//static	RF_SHADOW_T	RF_Shadow[RF6052_MAX_PATH][RF6052_MAX_REG] = {0};
-static	RF_SHADOW_T	RF_Shadow[RF6052_MAX_PATH][RF6052_MAX_REG];
+/*  2008/11/20 MH For Debug only, RF */
 /*------------------------Define local variable------------------------------*/
 
 /*-----------------------------------------------------------------------------
@@ -60,8 +53,8 @@ static	RF_SHADOW_T	RF_Shadow[RF6052_MAX_PATH][RF6052_MAX_REG];
  *
  * Overview:    This function is called by SetBWModeCallback8190Pci() only
  *
- * Input:       PADAPTER				Adapter
- *			WIRELESS_BANDWIDTH_E	Bandwidth	//20M or 40M
+ * Input:       struct adapter *			Adapter
+ *		WIRELESS_BANDWIDTH_E	Bandwidth	20M or 40M
  *
  * Output:      NONE
  *
@@ -71,27 +64,27 @@ static	RF_SHADOW_T	RF_Shadow[RF6052_MAX_PATH][RF6052_MAX_REG];
  *---------------------------------------------------------------------------*/
 void
 PHY_RF6052SetBandwidth8723B(
-	IN	PADAPTER				Adapter,
-	IN	CHANNEL_WIDTH		Bandwidth)	//20M or 40M
+struct adapter *			Adapter,
+enum CHANNEL_WIDTH		Bandwidth)	/* 20M or 40M */
 {
-	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(Adapter);
+	struct hal_com_data	*pHalData = GET_HAL_DATA(Adapter);
 
-	switch(Bandwidth)
+	switch (Bandwidth)
 	{
 		case CHANNEL_WIDTH_20:
-			pHalData->RfRegChnlVal[0] = ((pHalData->RfRegChnlVal[0] & 0xfffff3ff) | BIT10 | BIT11 );
+			pHalData->RfRegChnlVal[0] = ((pHalData->RfRegChnlVal[0] & 0xfffff3ff) | BIT10 | BIT11);
 			PHY_SetRFReg(Adapter, ODM_RF_PATH_A, RF_CHNLBW, bRFRegOffsetMask, pHalData->RfRegChnlVal[0]);
 			PHY_SetRFReg(Adapter, ODM_RF_PATH_B, RF_CHNLBW, bRFRegOffsetMask, pHalData->RfRegChnlVal[0]);
 			break;
 
 		case CHANNEL_WIDTH_40:
-			pHalData->RfRegChnlVal[0] = ((pHalData->RfRegChnlVal[0] & 0xfffff3ff) | BIT10 );
+			pHalData->RfRegChnlVal[0] = ((pHalData->RfRegChnlVal[0] & 0xfffff3ff) | BIT10);
 			PHY_SetRFReg(Adapter, ODM_RF_PATH_A, RF_CHNLBW, bRFRegOffsetMask, pHalData->RfRegChnlVal[0]);
 			PHY_SetRFReg(Adapter, ODM_RF_PATH_B, RF_CHNLBW, bRFRegOffsetMask, pHalData->RfRegChnlVal[0]);
 			break;
 
 		default:
-			//RT_TRACE(COMP_DBG, DBG_LOUD, ("PHY_SetRF8225Bandwidth(): unknown Bandwidth: %#X\n",Bandwidth ));
+			/* RT_TRACE(COMP_DBG, DBG_LOUD, ("PHY_SetRF8225Bandwidth(): unknown Bandwidth: %#X\n", Bandwidth)); */
 			break;
 	}
 
@@ -99,36 +92,36 @@ PHY_RF6052SetBandwidth8723B(
 
 static int
 phy_RF6052_Config_ParaFile(
-	IN	PADAPTER		Adapter
+struct adapter *	Adapter
 	)
 {
-	u32					u4RegValue=0;
-	u8					eRFPath;
-	BB_REGISTER_DEFINITION_T	*pPhyReg;
+	u32 				u4RegValue = 0;
+	u8 			eRFPath;
+	struct bb_register_def *pPhyReg;
 
 	int					rtStatus = _SUCCESS;
-	HAL_DATA_TYPE		*pHalData = GET_HAL_DATA(Adapter);
+	struct hal_com_data		*pHalData = GET_HAL_DATA(Adapter);
 
-	static char			sz8723RadioAFile[] = RTL8723B_PHY_RADIO_A;
-	static char			sz8723RadioBFile[] = RTL8723B_PHY_RADIO_B;
-	static s8 			sz8723BTxPwrTrackFile[] = RTL8723B_TXPWR_TRACK;
-	char					*pszRadioAFile, *pszRadioBFile, *pszTxPwrTrackFile;
+	static char 		sz8723RadioAFile[] = RTL8723B_PHY_RADIO_A;
+	static char 		sz8723RadioBFile[] = RTL8723B_PHY_RADIO_B;
+	static s8			sz8723BTxPwrTrackFile[] = RTL8723B_TXPWR_TRACK;
+	char 				*pszRadioAFile, *pszRadioBFile, *pszTxPwrTrackFile;
 
 	pszRadioAFile = sz8723RadioAFile;
 	pszRadioBFile = sz8723RadioBFile;
 	pszTxPwrTrackFile = sz8723BTxPwrTrackFile;
 
-	//3//-----------------------------------------------------------------
-	//3// <2> Initialize RF
-	//3//-----------------------------------------------------------------
-	//for(eRFPath = RF_PATH_A; eRFPath <pHalData->NumTotalRFPath; eRFPath++)
-	for(eRFPath = 0; eRFPath <pHalData->NumTotalRFPath; eRFPath++)
+	/* 3----------------------------------------------------------------- */
+	/* 3 <2> Initialize RF */
+	/* 3----------------------------------------------------------------- */
+	/* for (eRFPath = RF_PATH_A; eRFPath <pHalData->NumTotalRFPath; eRFPath++) */
+	for (eRFPath = 0; eRFPath <pHalData->NumTotalRFPath; eRFPath++)
 	{
 
 		pPhyReg = &pHalData->PHYRegDef[eRFPath];
 
 		/*----Store original RFENV control type----*/
-		switch(eRFPath)
+		switch (eRFPath)
 		{
 		case RF_PATH_A:
 		case RF_PATH_C:
@@ -142,28 +135,28 @@ phy_RF6052_Config_ParaFile(
 
 		/*----Set RF_ENV enable----*/
 		PHY_SetBBReg(Adapter, pPhyReg->rfintfe, bRFSI_RFENV<<16, 0x1);
-		udelay(1);//PlatformStallExecution(1);
+		udelay(1);/* PlatformStallExecution(1); */
 
 		/*----Set RF_ENV output high----*/
 		PHY_SetBBReg(Adapter, pPhyReg->rfintfo, bRFSI_RFENV, 0x1);
-		udelay(1);//PlatformStallExecution(1);
+		udelay(1);/* PlatformStallExecution(1); */
 
 		/* Set bit number of Address and Data for RF register */
-		PHY_SetBBReg(Adapter, pPhyReg->rfHSSIPara2, b3WireAddressLength, 0x0); 	// Set 1 to 4 bits for 8255
-		udelay(1);//PlatformStallExecution(1);
+		PHY_SetBBReg(Adapter, pPhyReg->rfHSSIPara2, b3WireAddressLength, 0x0);	/*  Set 1 to 4 bits for 8255 */
+		udelay(1);/* PlatformStallExecution(1); */
 
-		PHY_SetBBReg(Adapter, pPhyReg->rfHSSIPara2, b3WireDataLength, 0x0);	// Set 0 to 12  bits for 8255
-		udelay(1);//PlatformStallExecution(1);
+		PHY_SetBBReg(Adapter, pPhyReg->rfHSSIPara2, b3WireDataLength, 0x0);	/*  Set 0 to 12  bits for 8255 */
+		udelay(1);/* PlatformStallExecution(1); */
 
 		/*----Initialize RF fom connfiguration file----*/
-		switch(eRFPath)
+		switch (eRFPath)
 		{
 		case RF_PATH_A:
 #ifdef CONFIG_LOAD_PHY_PARA_FROM_FILE
 			if (PHY_ConfigRFWithParaFile(Adapter, pszRadioAFile, eRFPath) == _FAIL)
 #endif
 			{
-				if(HAL_STATUS_FAILURE ==ODM_ConfigRFWithHeaderFile(&pHalData->odmpriv,CONFIG_RF_RADIO, (ODM_RF_RADIO_PATH_E)eRFPath))
+				if (HAL_STATUS_FAILURE ==ODM_ConfigRFWithHeaderFile(&pHalData->odmpriv, CONFIG_RF_RADIO, (ODM_RF_RADIO_PATH_E)eRFPath))
 					rtStatus = _FAIL;
 			}
 			break;
@@ -172,7 +165,7 @@ phy_RF6052_Config_ParaFile(
 			if (PHY_ConfigRFWithParaFile(Adapter, pszRadioBFile, eRFPath) == _FAIL)
 #endif
 			{
-				if(HAL_STATUS_FAILURE ==ODM_ConfigRFWithHeaderFile(&pHalData->odmpriv,CONFIG_RF_RADIO, (ODM_RF_RADIO_PATH_E)eRFPath))
+				if (HAL_STATUS_FAILURE ==ODM_ConfigRFWithHeaderFile(&pHalData->odmpriv, CONFIG_RF_RADIO, (ODM_RF_RADIO_PATH_E)eRFPath))
 					rtStatus = _FAIL;
 			}
 			break;
@@ -183,7 +176,7 @@ phy_RF6052_Config_ParaFile(
 		}
 
 		/*----Restore RFENV control type----*/;
-		switch(eRFPath)
+		switch (eRFPath)
 		{
 		case RF_PATH_A:
 		case RF_PATH_C:
@@ -195,16 +188,16 @@ phy_RF6052_Config_ParaFile(
 			break;
 		}
 
-		if(rtStatus != _SUCCESS){
-			//RT_TRACE(COMP_FPGA, DBG_LOUD, ("phy_RF6052_Config_ParaFile():Radio[%d] Fail!!", eRFPath));
+		if (rtStatus != _SUCCESS) {
+			/* RT_TRACE(COMP_FPGA, DBG_LOUD, ("phy_RF6052_Config_ParaFile():Radio[%d] Fail!!", eRFPath)); */
 			goto phy_RF6052_Config_ParaFile_Fail;
 		}
 
 	}
 
-	//3 -----------------------------------------------------------------
-	//3 Configuration of Tx Power Tracking
-	//3 -----------------------------------------------------------------
+	/* 3 ----------------------------------------------------------------- */
+	/* 3 Configuration of Tx Power Tracking */
+	/* 3 ----------------------------------------------------------------- */
 
 #ifdef CONFIG_LOAD_PHY_PARA_FROM_FILE
 	if (PHY_ConfigRFWithTxPwrTrackParaFile(Adapter, pszTxPwrTrackFile) == _FAIL)
@@ -213,7 +206,7 @@ phy_RF6052_Config_ParaFile(
 		ODM_ConfigRFWithTxPwrTrackHeaderFile(&pHalData->odmpriv);
 	}
 
-	//RT_TRACE(COMP_INIT, DBG_LOUD, ("<---phy_RF6052_Config_ParaFile()\n"));
+	/* RT_TRACE(COMP_INIT, DBG_LOUD, ("<---phy_RF6052_Config_ParaFile()\n")); */
 	return rtStatus;
 
 phy_RF6052_Config_ParaFile_Fail:
@@ -223,23 +216,23 @@ phy_RF6052_Config_ParaFile_Fail:
 
 int
 PHY_RF6052_Config8723B(
-	IN	PADAPTER		Adapter)
+struct adapter *	Adapter)
 {
-	HAL_DATA_TYPE				*pHalData = GET_HAL_DATA(Adapter);
+	struct hal_com_data				*pHalData = GET_HAL_DATA(Adapter);
 	int					rtStatus = _SUCCESS;
 
-	//
-	// Initialize general global value
-	//
-	// TODO: Extend RF_PATH_C and RF_PATH_D in the future
-	if(pHalData->rf_type == RF_1T1R)
+	/*  */
+	/*  Initialize general global value */
+	/*  */
+	/*  TODO: Extend RF_PATH_C and RF_PATH_D in the future */
+	if (pHalData->rf_type == RF_1T1R)
 		pHalData->NumTotalRFPath = 1;
 	else
 		pHalData->NumTotalRFPath = 2;
 
-	//
-	// Config BB and RF
-	//
+	/*  */
+	/*  Config BB and RF */
+	/*  */
 	rtStatus = phy_RF6052_Config_ParaFile(Adapter);
 	return rtStatus;
 

@@ -11,11 +11,6 @@
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
  ******************************************************************************/
 #ifndef __HAL_COMMON_H__
 #define __HAL_COMMON_H__
@@ -28,18 +23,18 @@
 #include "hal_com_phycfg.h"
 
 /*------------------------------ Tx Desc definition Macro ------------------------*/
-//#pragma mark -- Tx Desc related definition. --
-//----------------------------------------------------------------------------
-//-----------------------------------------------------------
-//	Rate
-//-----------------------------------------------------------
-// CCK Rates, TxHT = 0
+/* pragma mark -- Tx Desc related definition. -- */
+/*  */
+/*  */
+/* 	Rate */
+/*  */
+/*  CCK Rates, TxHT = 0 */
 #define DESC_RATE1M					0x00
 #define DESC_RATE2M					0x01
 #define DESC_RATE5_5M				0x02
 #define DESC_RATE11M				0x03
 
-// OFDM Rates, TxHT = 0
+/*  OFDM Rates, TxHT = 0 */
 #define DESC_RATE6M					0x04
 #define DESC_RATE9M					0x05
 #define DESC_RATE12M				0x06
@@ -49,7 +44,7 @@
 #define DESC_RATE48M				0x0a
 #define DESC_RATE54M				0x0b
 
-// MCS Rates, TxHT = 1
+/*  MCS Rates, TxHT = 1 */
 #define DESC_RATEMCS0				0x0c
 #define DESC_RATEMCS1				0x0d
 #define DESC_RATEMCS2				0x0e
@@ -124,54 +119,54 @@
 #define DESC_RATEVHTSS4MCS9		0x53
 
 #define HDATA_RATE(rate)\
-(rate==DESC_RATE1M)?"CCK_1M":\
-(rate==DESC_RATE2M)?"CCK_2M":\
-(rate==DESC_RATE5_5M)?"CCK5_5M":\
-(rate==DESC_RATE11M)?"CCK_11M":\
-(rate==DESC_RATE6M)?"OFDM_6M":\
-(rate==DESC_RATE9M)?"OFDM_9M":\
-(rate==DESC_RATE12M)?"OFDM_12M":\
-(rate==DESC_RATE18M)?"OFDM_18M":\
-(rate==DESC_RATE24M)?"OFDM_24M":\
-(rate==DESC_RATE36M)?"OFDM_36M":\
-(rate==DESC_RATE48M)?"OFDM_48M":\
-(rate==DESC_RATE54M)?"OFDM_54M":\
-(rate==DESC_RATEMCS0)?"MCS0":\
-(rate==DESC_RATEMCS1)?"MCS1":\
-(rate==DESC_RATEMCS2)?"MCS2":\
-(rate==DESC_RATEMCS3)?"MCS3":\
-(rate==DESC_RATEMCS4)?"MCS4":\
-(rate==DESC_RATEMCS5)?"MCS5":\
-(rate==DESC_RATEMCS6)?"MCS6":\
-(rate==DESC_RATEMCS7)?"MCS7":\
-(rate==DESC_RATEMCS8)?"MCS8":\
-(rate==DESC_RATEMCS9)?"MCS9":\
-(rate==DESC_RATEMCS10)?"MCS10":\
-(rate==DESC_RATEMCS11)?"MCS11":\
-(rate==DESC_RATEMCS12)?"MCS12":\
-(rate==DESC_RATEMCS13)?"MCS13":\
-(rate==DESC_RATEMCS14)?"MCS14":\
-(rate==DESC_RATEMCS15)?"MCS15":\
-(rate==DESC_RATEVHTSS1MCS0)?"VHTSS1MCS0":\
-(rate==DESC_RATEVHTSS1MCS1)?"VHTSS1MCS1":\
-(rate==DESC_RATEVHTSS1MCS2)?"VHTSS1MCS2":\
-(rate==DESC_RATEVHTSS1MCS3)?"VHTSS1MCS3":\
-(rate==DESC_RATEVHTSS1MCS4)?"VHTSS1MCS4":\
-(rate==DESC_RATEVHTSS1MCS5)?"VHTSS1MCS5":\
-(rate==DESC_RATEVHTSS1MCS6)?"VHTSS1MCS6":\
-(rate==DESC_RATEVHTSS1MCS7)?"VHTSS1MCS7":\
-(rate==DESC_RATEVHTSS1MCS8)?"VHTSS1MCS8":\
-(rate==DESC_RATEVHTSS1MCS9)?"VHTSS1MCS9":\
-(rate==DESC_RATEVHTSS2MCS0)?"VHTSS2MCS0":\
-(rate==DESC_RATEVHTSS2MCS1)?"VHTSS2MCS1":\
-(rate==DESC_RATEVHTSS2MCS2)?"VHTSS2MCS2":\
-(rate==DESC_RATEVHTSS2MCS3)?"VHTSS2MCS3":\
-(rate==DESC_RATEVHTSS2MCS4)?"VHTSS2MCS4":\
-(rate==DESC_RATEVHTSS2MCS5)?"VHTSS2MCS5":\
-(rate==DESC_RATEVHTSS2MCS6)?"VHTSS2MCS6":\
-(rate==DESC_RATEVHTSS2MCS7)?"VHTSS2MCS7":\
-(rate==DESC_RATEVHTSS2MCS8)?"VHTSS2MCS8":\
-(rate==DESC_RATEVHTSS2MCS9)?"VHTSS2MCS9":"UNKNOW"
+(rate ==DESC_RATE1M)?"CCK_1M":\
+(rate ==DESC_RATE2M)?"CCK_2M":\
+(rate ==DESC_RATE5_5M)?"CCK5_5M":\
+(rate ==DESC_RATE11M)?"CCK_11M":\
+(rate ==DESC_RATE6M)?"OFDM_6M":\
+(rate ==DESC_RATE9M)?"OFDM_9M":\
+(rate ==DESC_RATE12M)?"OFDM_12M":\
+(rate ==DESC_RATE18M)?"OFDM_18M":\
+(rate ==DESC_RATE24M)?"OFDM_24M":\
+(rate ==DESC_RATE36M)?"OFDM_36M":\
+(rate ==DESC_RATE48M)?"OFDM_48M":\
+(rate ==DESC_RATE54M)?"OFDM_54M":\
+(rate ==DESC_RATEMCS0)?"MCS0":\
+(rate ==DESC_RATEMCS1)?"MCS1":\
+(rate ==DESC_RATEMCS2)?"MCS2":\
+(rate ==DESC_RATEMCS3)?"MCS3":\
+(rate ==DESC_RATEMCS4)?"MCS4":\
+(rate ==DESC_RATEMCS5)?"MCS5":\
+(rate ==DESC_RATEMCS6)?"MCS6":\
+(rate ==DESC_RATEMCS7)?"MCS7":\
+(rate ==DESC_RATEMCS8)?"MCS8":\
+(rate ==DESC_RATEMCS9)?"MCS9":\
+(rate ==DESC_RATEMCS10)?"MCS10":\
+(rate ==DESC_RATEMCS11)?"MCS11":\
+(rate ==DESC_RATEMCS12)?"MCS12":\
+(rate ==DESC_RATEMCS13)?"MCS13":\
+(rate ==DESC_RATEMCS14)?"MCS14":\
+(rate ==DESC_RATEMCS15)?"MCS15":\
+(rate ==DESC_RATEVHTSS1MCS0)?"VHTSS1MCS0":\
+(rate ==DESC_RATEVHTSS1MCS1)?"VHTSS1MCS1":\
+(rate ==DESC_RATEVHTSS1MCS2)?"VHTSS1MCS2":\
+(rate ==DESC_RATEVHTSS1MCS3)?"VHTSS1MCS3":\
+(rate ==DESC_RATEVHTSS1MCS4)?"VHTSS1MCS4":\
+(rate ==DESC_RATEVHTSS1MCS5)?"VHTSS1MCS5":\
+(rate ==DESC_RATEVHTSS1MCS6)?"VHTSS1MCS6":\
+(rate ==DESC_RATEVHTSS1MCS7)?"VHTSS1MCS7":\
+(rate ==DESC_RATEVHTSS1MCS8)?"VHTSS1MCS8":\
+(rate ==DESC_RATEVHTSS1MCS9)?"VHTSS1MCS9":\
+(rate ==DESC_RATEVHTSS2MCS0)?"VHTSS2MCS0":\
+(rate ==DESC_RATEVHTSS2MCS1)?"VHTSS2MCS1":\
+(rate ==DESC_RATEVHTSS2MCS2)?"VHTSS2MCS2":\
+(rate ==DESC_RATEVHTSS2MCS3)?"VHTSS2MCS3":\
+(rate ==DESC_RATEVHTSS2MCS4)?"VHTSS2MCS4":\
+(rate ==DESC_RATEVHTSS2MCS5)?"VHTSS2MCS5":\
+(rate ==DESC_RATEVHTSS2MCS6)?"VHTSS2MCS6":\
+(rate ==DESC_RATEVHTSS2MCS7)?"VHTSS2MCS7":\
+(rate ==DESC_RATEVHTSS2MCS8)?"VHTSS2MCS8":\
+(rate ==DESC_RATEVHTSS2MCS9)?"VHTSS2MCS9":"UNKNOW"
 
 
 enum{
@@ -183,20 +178,19 @@ typedef enum _RT_MEDIA_STATUS {
 	RT_MEDIA_CONNECT       = 1
 } RT_MEDIA_STATUS;
 
-#define MAX_DLFW_PAGE_SIZE			4096	// @ page : 4k bytes
-typedef enum _FIRMWARE_SOURCE {
+#define MAX_DLFW_PAGE_SIZE			4096	/*  @ page : 4k bytes */
+enum FIRMWARE_SOURCE {
 	FW_SOURCE_IMG_FILE = 0,
-	FW_SOURCE_HEADER_FILE = 1,		//from header file
-} FIRMWARE_SOURCE, *PFIRMWARE_SOURCE;
+	FW_SOURCE_HEADER_FILE = 1,		/* from header file */
+};
 
+/*  BK, BE, VI, VO, HCCA, MANAGEMENT, COMMAND, HIGH, BEACON. */
+/* define MAX_TX_QUEUE		9 */
 
-// BK, BE, VI, VO, HCCA, MANAGEMENT, COMMAND, HIGH, BEACON.
-//#define MAX_TX_QUEUE		9
-
-#define TX_SELE_HQ			BIT(0)		// High Queue
-#define TX_SELE_LQ			BIT(1)		// Low Queue
-#define TX_SELE_NQ			BIT(2)		// Normal Queue
-#define TX_SELE_EQ			BIT(3)		// Extern Queue
+#define TX_SELE_HQ			BIT(0)		/*  High Queue */
+#define TX_SELE_LQ			BIT(1)		/*  Low Queue */
+#define TX_SELE_NQ			BIT(2)		/*  Normal Queue */
+#define TX_SELE_EQ			BIT(3)		/*  Extern Queue */
 
 #define PageNum_128(_Len)		(u32)(((_Len)>>7) + ((_Len)&0x7F ? 1:0))
 #define PageNum_256(_Len)		(u32)(((_Len)>>8) + ((_Len)&0xFF ? 1:0))
@@ -204,149 +198,112 @@ typedef enum _FIRMWARE_SOURCE {
 #define PageNum(_Len, _Size)		(u32)(((_Len)/(_Size)) + ((_Len)&((_Size) - 1) ? 1:0))
 
 
-u8 rtw_hal_data_init(_adapter *padapter);
-void rtw_hal_data_deinit(_adapter *padapter);
+u8 rtw_hal_data_init(struct adapter *padapter);
+void rtw_hal_data_deinit(struct adapter *padapter);
 
 void dump_chip_info(HAL_VERSION	ChipVersion);
 
-u8	//return the final channel plan decision
+u8 /* return the final channel plan decision */
 hal_com_config_channel_plan(
-	IN	PADAPTER	padapter,
-	IN	u8			hw_channel_plan,	//channel plan from HW (efuse/eeprom)
-	IN	u8			sw_channel_plan,	//channel plan from SW (registry/module param)
-	IN	u8			def_channel_plan,	//channel plan used when the former two is invalid
-	IN	bool		AutoLoadFail
+struct adapter *padapter,
+u8 	hw_channel_plan,	/* channel plan from HW (efuse/eeprom) */
+u8 	sw_channel_plan,	/* channel plan from SW (registry/module param) */
+u8 	def_channel_plan,	/* channel plan used when the former two is invalid */
+bool		AutoLoadFail
 	);
 
 bool
 HAL_IsLegalChannel(
-	IN	PADAPTER	Adapter,
-	IN	u32			Channel
+struct adapter *Adapter,
+u32 		Channel
 	);
 
-u8	MRateToHwRate(u8 rate);
+u8 MRateToHwRate(u8 rate);
 
-u8	HwRateToMRate(u8 rate);
+u8 HwRateToMRate(u8 rate);
 
-void	HalSetBrateCfg(
-	IN PADAPTER		Adapter,
-	IN u8			*mBratesOS,
-	OUT u16			*pBrateCfg);
+void HalSetBrateCfg(
+	struct adapter *	Adapter,
+	u8 	*mBratesOS,
+	u16 		*pBrateCfg);
 
 bool
 Hal_MappingOutPipe(
-	IN	PADAPTER	pAdapter,
-	IN	u8		NumOutPipe
+struct adapter *padapter,
+u8 NumOutPipe
 	);
 
-void hal_init_macaddr(_adapter *adapter);
+void hal_init_macaddr(struct adapter *adapter);
 
-void rtw_init_hal_com_default_value(PADAPTER Adapter);
+void rtw_init_hal_com_default_value(struct adapter * Adapter);
 
-void c2h_evt_clear(_adapter *adapter);
-s32 c2h_evt_read_88xx(_adapter *adapter, u8 *buf);
+void c2h_evt_clear(struct adapter *adapter);
+s32 c2h_evt_read_88xx(struct adapter *adapter, u8 *buf);
 
-u8  rtw_hal_networktype_to_raid(_adapter *adapter, struct sta_info *psta);
-u8 rtw_get_mgntframe_raid(_adapter *adapter,unsigned char network_type);
-void rtw_hal_update_sta_rate_mask(PADAPTER padapter, struct sta_info *psta);
+u8  rtw_hal_networktype_to_raid(struct adapter *adapter, struct sta_info *psta);
+u8 rtw_get_mgntframe_raid(struct adapter *adapter, unsigned char network_type);
+void rtw_hal_update_sta_rate_mask(struct adapter *padapter, struct sta_info *psta);
 
-void hw_var_port_switch(_adapter *adapter);
+void hw_var_port_switch (struct adapter *adapter);
 
-void SetHwReg(PADAPTER padapter, u8 variable, u8 *val);
-void GetHwReg(PADAPTER padapter, u8 variable, u8 *val);
-void rtw_hal_check_rxfifo_full(_adapter *adapter);
+void SetHwReg(struct adapter *padapter, u8 variable, u8 *val);
+void GetHwReg(struct adapter *padapter, u8 variable, u8 *val);
+void rtw_hal_check_rxfifo_full(struct adapter *adapter);
 
-u8 SetHalDefVar(_adapter *adapter, HAL_DEF_VARIABLE variable, void *value);
-u8 GetHalDefVar(_adapter *adapter, HAL_DEF_VARIABLE variable, void *value);
+u8 SetHalDefVar(struct adapter *adapter, enum HAL_DEF_VARIABLE variable,
+		void *value);
+u8 GetHalDefVar(struct adapter *adapter, enum HAL_DEF_VARIABLE variable,
+		void *value);
 
-bool
-eqNByte(
-	u8*	str1,
-	u8*	str2,
-	u32	num
-	);
+bool eqNByte(u8 *str1, u8 *str2, u32 num);
 
-bool
-IsHexDigit(
-	IN	char	chTmp
-	);
+bool IsHexDigit(char chTmp);
 
-u32
-MapCharToHexDigit(
-	IN	char	chTmp
-);
+u32 MapCharToHexDigit(char chTmp);
 
-bool
-GetHexValueFromString(
-	IN		char*			szStr,
-	IN OUT	u32*			pu4bVal,
-	IN OUT	u32*			pu4bMove
-	);
+bool GetHexValueFromString(char *szStr, u32 *pu4bVal, u32 *pu4bMove);
 
-bool
-GetFractionValueFromString(
-	IN		char*		szStr,
-	IN OUT	u8*			pInteger,
-	IN OUT	u8*			pFraction,
-	IN OUT	u32*		pu4bMove
-	);
+bool GetFractionValueFromString(char *szStr, u8 *pInteger, u8 *pFraction,
+				u32 *pu4bMove);
 
-bool
-IsCommentString(
-	IN		char*		szStr
-	);
+bool IsCommentString(char *szStr);
 
-bool
-ParseQualifiedString(
-    IN	char* In,
-    IN OUT  u32* Start,
-    OUT	char* Out,
-    IN	char  LeftQualifier,
-    IN	char  RightQualifier
-    );
+bool ParseQualifiedString(char *In, u32 *Start, char *Out, char LeftQualifier,
+			  char RightQualifier);
 
-bool
-GetU1ByteIntegerFromStringInDecimal(
-	IN		char* Str,
-	IN OUT	u8* pInt
-	);
+bool GetU1ByteIntegerFromStringInDecimal(char *str, u8 *in);
 
-bool
-isAllSpaceOrTab(
-	u8*	data,
-	u8	size
-	);
+bool isAllSpaceOrTab(u8 *data, u8 size);
 
-void linked_info_dump(_adapter *padapter,u8 benable);
+void linked_info_dump(struct adapter *padapter, u8 benable);
 #ifdef DBG_RX_SIGNAL_DISPLAY_RAW_DATA
-void rtw_get_raw_rssi_info(void *sel, _adapter *padapter);
-void rtw_store_phy_info(_adapter *padapter, union recv_frame *prframe);
-void rtw_dump_raw_rssi_info(_adapter *padapter);
+void rtw_get_raw_rssi_info(void *sel, struct adapter *padapter);
+void rtw_store_phy_info(struct adapter *padapter, union recv_frame *prframe);
+void rtw_dump_raw_rssi_info(struct adapter *padapter);
 #endif
 
 #define		HWSET_MAX_SIZE			512
 
-void rtw_bb_rf_gain_offset(_adapter *padapter);
+void rtw_bb_rf_gain_offset(struct adapter *padapter);
 
-void GetHalODMVar(
-	PADAPTER				Adapter,
-	HAL_ODM_VARIABLE		eVariable,
-	void *					pValue1,
-	void *					pValue2);
+void GetHalODMVar(struct adapter *Adapter,
+	enum HAL_ODM_VARIABLE		eVariable,
+	void *				pValue1,
+	void *				pValue2);
 void SetHalODMVar(
-	PADAPTER				Adapter,
-	HAL_ODM_VARIABLE		eVariable,
-	void *					pValue1,
+	struct adapter *			Adapter,
+	enum HAL_ODM_VARIABLE		eVariable,
+	void *				pValue1,
 	bool					bSet);
 
 #ifdef CONFIG_BACKGROUND_NOISE_MONITOR
 struct noise_info
 {
-	u8 		bPauseDIG;
-	u8 		IGIValue;
-	u32 	max_time;//ms
-	u8		chan;
+	u8 bPauseDIG;
+	u8 IGIValue;
+	u32 max_time;/* ms */
+	u8 chan;
 };
 #endif
 
-#endif //__HAL_COMMON_H__
+#endif /* __HAL_COMMON_H__ */

@@ -1,11 +1,19 @@
+/******************************************************************************
+ *
+ * Copyright(c) 2007 - 2012 Realtek Corporation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of version 2 of the GNU General Public License as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ ******************************************************************************/
 
 /*++
-Copyright (c) Realtek Semiconductor Corp. All rights reserved.
-
-Module Name:
-	Hal8821PwrSeq.c
-
-Abstract:
 	This file includes all kinds of Power Action event for RTL8723B and corresponding hardware configurtions which are released from HW SD.
 
 Major Change History:
@@ -17,25 +25,24 @@ Major Change History:
 
 #include "Hal8723BPwrSeq.h"
 
-
 /*
     drivers should parse below arrays and do the corresponding actions
 */
-//3 Power on  Array
+/* 3 Power on  Array */
 WLAN_PWR_CFG rtl8723B_power_on_flow[RTL8723B_TRANS_CARDEMU_TO_ACT_STEPS+RTL8723B_TRANS_END_STEPS]=
 {
 	RTL8723B_TRANS_CARDEMU_TO_ACT
 	RTL8723B_TRANS_END
 };
 
-//3Radio off GPIO Array
+/* 3Radio off GPIO Array */
 WLAN_PWR_CFG rtl8723B_radio_off_flow[RTL8723B_TRANS_ACT_TO_CARDEMU_STEPS+RTL8723B_TRANS_END_STEPS]=
 {
 	RTL8723B_TRANS_ACT_TO_CARDEMU
 	RTL8723B_TRANS_END
 };
 
-//3Card Disable Array
+/* 3Card Disable Array */
 WLAN_PWR_CFG rtl8723B_card_disable_flow[RTL8723B_TRANS_ACT_TO_CARDEMU_STEPS+RTL8723B_TRANS_CARDEMU_TO_PDN_STEPS+RTL8723B_TRANS_END_STEPS]=
 {
 	RTL8723B_TRANS_ACT_TO_CARDEMU
@@ -43,7 +50,7 @@ WLAN_PWR_CFG rtl8723B_card_disable_flow[RTL8723B_TRANS_ACT_TO_CARDEMU_STEPS+RTL8
 	RTL8723B_TRANS_END
 };
 
-//3 Card Enable Array
+/* 3 Card Enable Array */
 WLAN_PWR_CFG rtl8723B_card_enable_flow[RTL8723B_TRANS_ACT_TO_CARDEMU_STEPS+RTL8723B_TRANS_CARDEMU_TO_PDN_STEPS+RTL8723B_TRANS_END_STEPS]=
 {
 	RTL8723B_TRANS_CARDDIS_TO_CARDEMU
@@ -51,7 +58,7 @@ WLAN_PWR_CFG rtl8723B_card_enable_flow[RTL8723B_TRANS_ACT_TO_CARDEMU_STEPS+RTL87
 	RTL8723B_TRANS_END
 };
 
-//3Suspend Array
+/* 3Suspend Array */
 WLAN_PWR_CFG rtl8723B_suspend_flow[RTL8723B_TRANS_ACT_TO_CARDEMU_STEPS+RTL8723B_TRANS_CARDEMU_TO_SUS_STEPS+RTL8723B_TRANS_END_STEPS]=
 {
 	RTL8723B_TRANS_ACT_TO_CARDEMU
@@ -59,7 +66,7 @@ WLAN_PWR_CFG rtl8723B_suspend_flow[RTL8723B_TRANS_ACT_TO_CARDEMU_STEPS+RTL8723B_
 	RTL8723B_TRANS_END
 };
 
-//3 Resume Array
+/* 3 Resume Array */
 WLAN_PWR_CFG rtl8723B_resume_flow[RTL8723B_TRANS_ACT_TO_CARDEMU_STEPS+RTL8723B_TRANS_CARDEMU_TO_SUS_STEPS+RTL8723B_TRANS_END_STEPS]=
 {
 	RTL8723B_TRANS_SUS_TO_CARDEMU
@@ -67,7 +74,7 @@ WLAN_PWR_CFG rtl8723B_resume_flow[RTL8723B_TRANS_ACT_TO_CARDEMU_STEPS+RTL8723B_T
 	RTL8723B_TRANS_END
 };
 
-//3HWPDN Array
+/* 3HWPDN Array */
 WLAN_PWR_CFG rtl8723B_hwpdn_flow[RTL8723B_TRANS_ACT_TO_CARDEMU_STEPS+RTL8723B_TRANS_CARDEMU_TO_PDN_STEPS+RTL8723B_TRANS_END_STEPS]=
 {
 	RTL8723B_TRANS_ACT_TO_CARDEMU
@@ -75,34 +82,34 @@ WLAN_PWR_CFG rtl8723B_hwpdn_flow[RTL8723B_TRANS_ACT_TO_CARDEMU_STEPS+RTL8723B_TR
 	RTL8723B_TRANS_END
 };
 
-//3 Enter LPS
+/* 3 Enter LPS */
 WLAN_PWR_CFG rtl8723B_enter_lps_flow[RTL8723B_TRANS_ACT_TO_LPS_STEPS+RTL8723B_TRANS_END_STEPS]=
 {
-	//FW behavior
+	/* FW behavior */
 	RTL8723B_TRANS_ACT_TO_LPS
 	RTL8723B_TRANS_END
 };
 
-//3 Leave LPS
+/* 3 Leave LPS */
 WLAN_PWR_CFG rtl8723B_leave_lps_flow[RTL8723B_TRANS_LPS_TO_ACT_STEPS+RTL8723B_TRANS_END_STEPS]=
 {
-	//FW behavior
+	/* FW behavior */
 	RTL8723B_TRANS_LPS_TO_ACT
 	RTL8723B_TRANS_END
 };
 
-//3 Enter SW LPS
+/* 3 Enter SW LPS */
 WLAN_PWR_CFG rtl8723B_enter_swlps_flow[RTL8723B_TRANS_ACT_TO_SWLPS_STEPS+RTL8723B_TRANS_END_STEPS]=
 {
-	//SW behavior
+	/* SW behavior */
 	RTL8723B_TRANS_ACT_TO_SWLPS
 	RTL8723B_TRANS_END
 };
 
-//3 Leave SW LPS
+/* 3 Leave SW LPS */
 WLAN_PWR_CFG rtl8723B_leave_swlps_flow[RTL8723B_TRANS_SWLPS_TO_ACT_STEPS+RTL8723B_TRANS_END_STEPS]=
 {
-	//SW behavior
+	/* SW behavior */
 	RTL8723B_TRANS_SWLPS_TO_ACT
 	RTL8723B_TRANS_END
 };

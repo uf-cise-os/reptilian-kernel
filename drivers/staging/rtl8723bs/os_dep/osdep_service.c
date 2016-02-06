@@ -11,17 +11,13 @@
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
  ******************************************************************************/
 
 
 #define _OSDEP_SERVICE_C_
 
 #include <drv_types.h>
+#include <rtw_debug.h>
 
 /*
 * Translate the OS dependent @param error_code to OS independent RTW_STATUS_CODE
@@ -29,23 +25,23 @@
 */
 inline int RTW_STATUS_CODE(int error_code)
 {
-	if(error_code >=0)
+	if (error_code >= 0)
 		return _SUCCESS;
 	return _FAIL;
 }
 
-u8* _rtw_malloc(u32 sz)
+u8 *_rtw_malloc(u32 sz)
 {
-	u8 	*pbuf=NULL;
+	u8 *pbuf = NULL;
 
-	pbuf = kmalloc(sz,in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
+	pbuf = kmalloc(sz, in_interrupt() ? GFP_ATOMIC : GFP_KERNEL);
 
 	return pbuf;
 }
 
-u8* _rtw_zmalloc(u32 sz)
+u8 *_rtw_zmalloc(u32 sz)
 {
-	u8 	*pbuf = _rtw_malloc(sz);
+	u8 *pbuf = _rtw_malloc(sz);
 
 	if (pbuf != NULL) {
 		memset(pbuf, 0, sz);
@@ -77,12 +73,12 @@ inline int _rtw_netif_rx(_nic_hdl ndev, struct sk_buff *skb)
 
 void rtw_init_timer(_timer *ptimer, void *padapter, void *pfunc)
 {
-	_adapter *adapter = (_adapter *)padapter;
+	struct adapter *adapter = (struct adapter *)padapter;
 
 	_init_timer(ptimer, adapter->pnetdev, pfunc, adapter);
 }
 
-void	_rtw_init_queue(_queue	*pqueue)
+void _rtw_init_queue(struct __queue *pqueue)
 {
 	INIT_LIST_HEAD(&(pqueue->queue));
 
@@ -101,13 +97,13 @@ static int openFile(struct file **fpp, char *path, int flag, int mode)
 {
 	struct file *fp;
 
-	fp=filp_open(path, flag, mode);
-	if(IS_ERR(fp)) {
-		*fpp=NULL;
+	fp =filp_open(path, flag, mode);
+	if (IS_ERR(fp)) {
+		*fpp = NULL;
 		return PTR_ERR(fp);
 	}
 	else {
-		*fpp=fp;
+		*fpp =fp;
 		return 0;
 	}
 }
@@ -119,22 +115,22 @@ static int openFile(struct file **fpp, char *path, int flag, int mode)
 */
 static int closeFile(struct file *fp)
 {
-	filp_close(fp,NULL);
+	filp_close(fp, NULL);
 	return 0;
 }
 
-static int readFile(struct file *fp,char *buf,int len)
+static int readFile(struct file *fp, char *buf, int len)
 {
-	int rlen=0, sum=0;
+	int rlen = 0, sum = 0;
 
 	if (!fp->f_op || !fp->f_op->read)
 		return -EPERM;
 
-	while(sum<len) {
-		rlen=fp->f_op->read(fp,(char __force __user *)buf+sum,len-sum, &fp->f_pos);
-		if(rlen>0)
+	while (sum<len) {
+		rlen =fp->f_op->read(fp, (char __force __user *)buf+sum, len-sum, &fp->f_pos);
+		if (rlen>0)
 			sum+=rlen;
-		else if(0 != rlen)
+		else if (0 != rlen)
 			return rlen;
 		else
 			break;
@@ -156,18 +152,18 @@ static int isFileReadable(char *path)
 	mm_segment_t oldfs;
 	char buf;
 
-	fp=filp_open(path, O_RDONLY, 0);
-	if(IS_ERR(fp)) {
+	fp =filp_open(path, O_RDONLY, 0);
+	if (IS_ERR(fp)) {
 		ret = PTR_ERR(fp);
 	}
 	else {
 		oldfs = get_fs(); set_fs(get_ds());
 
-		if(1!=readFile(fp, &buf, 1))
+		if (1!=readFile(fp, &buf, 1))
 			ret = PTR_ERR(fp);
 
 		set_fs(oldfs);
-		filp_close(fp,NULL);
+		filp_close(fp, NULL);
 	}
 	return ret;
 }
@@ -179,28 +175,28 @@ static int isFileReadable(char *path)
 * @param sz how many bytes to read at most
 * @return the byte we've read, or Linux specific error code
 */
-static int retriveFromFile(char *path, u8* buf, u32 sz)
+static int retriveFromFile(char *path, u8 *buf, u32 sz)
 {
 	int ret =-1;
 	mm_segment_t oldfs;
 	struct file *fp;
 
-	if(path && buf) {
-		if( 0 == (ret=openFile(&fp,path, O_RDONLY, 0)) ){
-			DBG_871X("%s openFile path:%s fp=%p\n",__FUNCTION__, path ,fp);
+	if (path && buf) {
+		if (0 == (ret =openFile(&fp, path, O_RDONLY, 0))) {
+			DBG_871X("%s openFile path:%s fp =%p\n", __func__, path , fp);
 
 			oldfs = get_fs(); set_fs(get_ds());
-			ret=readFile(fp, buf, sz);
+			ret =readFile(fp, buf, sz);
 			set_fs(oldfs);
 			closeFile(fp);
 
-			DBG_871X("%s readFile, ret:%d\n",__FUNCTION__, ret);
+			DBG_871X("%s readFile, ret:%d\n", __func__, ret);
 
 		} else {
-			DBG_871X("%s openFile path:%s Fail, ret:%d\n",__FUNCTION__, path, ret);
+			DBG_871X("%s openFile path:%s Fail, ret:%d\n", __func__, path, ret);
 		}
 	} else {
-		DBG_871X("%s NULL pointer\n",__FUNCTION__);
+		DBG_871X("%s NULL pointer\n", __func__);
 		ret =  -EINVAL;
 	}
 	return ret;
@@ -213,7 +209,7 @@ static int retriveFromFile(char *path, u8* buf, u32 sz)
 */
 int rtw_is_file_readable(char *path)
 {
-	if(isFileReadable(path) == 0)
+	if (isFileReadable(path) == 0)
 		return true;
 	else
 		return false;
@@ -226,10 +222,10 @@ int rtw_is_file_readable(char *path)
 * @param sz how many bytes to read at most
 * @return the byte we've read
 */
-int rtw_retrive_from_file(char *path, u8* buf, u32 sz)
+int rtw_retrive_from_file(char *path, u8 *buf, u32 sz)
 {
 	int ret =retriveFromFile(path, buf, sz);
-	return ret>=0?ret:0;
+	return ret>= 0?ret:0;
 }
 
 struct net_device *rtw_alloc_etherdev_with_old_priv(int sizeof_priv, void *old_priv)
@@ -242,8 +238,8 @@ struct net_device *rtw_alloc_etherdev_with_old_priv(int sizeof_priv, void *old_p
 		goto RETURN;
 
 	pnpi = netdev_priv(pnetdev);
-	pnpi->priv=old_priv;
-	pnpi->sizeof_priv=sizeof_priv;
+	pnpi->priv =old_priv;
+	pnpi->sizeof_priv =sizeof_priv;
 
 RETURN:
 	return pnetdev;
@@ -267,7 +263,7 @@ struct net_device *rtw_alloc_etherdev(int sizeof_priv)
 		goto RETURN;
 	}
 
-	pnpi->sizeof_priv=sizeof_priv;
+	pnpi->sizeof_priv =sizeof_priv;
 RETURN:
 	return pnetdev;
 }
@@ -276,12 +272,12 @@ void rtw_free_netdev(struct net_device * netdev)
 {
 	struct rtw_netdev_priv_indicator *pnpi;
 
-	if(!netdev)
+	if (!netdev)
 		goto RETURN;
 
 	pnpi = netdev_priv(netdev);
 
-	if(!pnpi->priv)
+	if (!pnpi->priv)
 		goto RETURN;
 
 	vfree(pnpi->priv);
@@ -291,31 +287,31 @@ RETURN:
 	return;
 }
 
-int rtw_change_ifname(_adapter *padapter, const char *ifname)
+int rtw_change_ifname(struct adapter *padapter, const char *ifname)
 {
 	struct net_device *pnetdev;
 	struct net_device *cur_pnetdev;
 	struct rereg_nd_name_data *rereg_priv;
 	int ret;
 
-	if(!padapter)
+	if (!padapter)
 		goto error;
 
 	cur_pnetdev = padapter->pnetdev;
 	rereg_priv = &padapter->rereg_nd_name_priv;
 
-	//free the old_pnetdev
-	if(rereg_priv->old_pnetdev) {
+	/* free the old_pnetdev */
+	if (rereg_priv->old_pnetdev) {
 		free_netdev(rereg_priv->old_pnetdev);
 		rereg_priv->old_pnetdev = NULL;
 	}
 
-	if(!rtnl_is_locked())
+	if (!rtnl_is_locked())
 		unregister_netdev(cur_pnetdev);
 	else
 		unregister_netdevice(cur_pnetdev);
 
-	rereg_priv->old_pnetdev=cur_pnetdev;
+	rereg_priv->old_pnetdev =cur_pnetdev;
 
 	pnetdev = rtw_init_netdev(padapter);
 	if (!pnetdev)  {
@@ -329,13 +325,13 @@ int rtw_change_ifname(_adapter *padapter, const char *ifname)
 
 	memcpy(pnetdev->dev_addr, padapter->eeprompriv.mac_addr, ETH_ALEN);
 
-	if(!rtnl_is_locked())
+	if (!rtnl_is_locked())
 		ret = register_netdev(pnetdev);
 	else
 		ret = register_netdevice(pnetdev);
 
-	if ( ret != 0) {
-		RT_TRACE(_module_hci_intfs_c_,_drv_err_,("register_netdev() failed\n"));
+	if (ret != 0) {
+		RT_TRACE(_module_hci_intfs_c_, _drv_err_, ("register_netdev() failed\n"));
 		goto error;
 	}
 
@@ -362,7 +358,6 @@ void rtw_buf_free(u8 **buf, u32 *buf_len)
 	ori_len = *buf_len;
 
 	if (*buf) {
-		u32 tmp_buf_len = *buf_len;
 		*buf_len = 0;
 		kfree(*buf);
 		*buf = NULL;

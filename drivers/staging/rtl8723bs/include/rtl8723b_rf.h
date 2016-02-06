@@ -11,22 +11,16 @@
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
  ******************************************************************************/
 #ifndef __RTL8723B_RF_H__
 #define __RTL8723B_RF_H__
 
 #include "rtl8192c_rf.h"
 
-int	PHY_RF6052_Config8723B(	IN	PADAPTER		Adapter	);
+int	PHY_RF6052_Config8723B(struct adapter *Adapter	);
 
 void
-PHY_RF6052SetBandwidth8723B(
-	IN	PADAPTER				Adapter,
-	IN	CHANNEL_WIDTH		Bandwidth);
+PHY_RF6052SetBandwidth8723B(struct adapter *Adapter,
+	enum CHANNEL_WIDTH		Bandwidth);
 
 #endif

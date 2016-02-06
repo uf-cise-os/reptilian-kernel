@@ -11,11 +11,6 @@
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
  ******************************************************************************/
 #ifndef __SDIO_OPS_LINUX_H__
 #define __SDIO_OPS_LINUX_H__
@@ -41,5 +36,5 @@ s32 _sd_write(struct intf_hdl *pintfhdl, u32 addr, u32 cnt, void *pdata);
 s32 sd_write(struct intf_hdl *pintfhdl, u32 addr, u32 cnt, void *pdata);
 
 
-void rtw_sdio_set_irq_thd(struct dvobj_priv *dvobj, void * thd_hdl);
+void rtw_sdio_set_irq_thd(struct dvobj_priv *dvobj, void *thd_hdl);
 #endif

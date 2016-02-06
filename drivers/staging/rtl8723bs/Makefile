@@ -1,24 +1,17 @@
 EXTRA_CFLAGS += $(USER_EXTRA_CFLAGS)
 EXTRA_CFLAGS += -O1
 #EXTRA_CFLAGS += -O3
-#EXTRA_CFLAGS += -Wall
+EXTRA_CFLAGS += -Wall
 #EXTRA_CFLAGS += -Wextra
 #EXTRA_CFLAGS += -Werror
 #EXTRA_CFLAGS += -pedantic
 #EXTRA_CFLAGS += -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes
 
-EXTRA_CFLAGS += -Wno-unused-variable
-EXTRA_CFLAGS += -Wno-unused-value
-EXTRA_CFLAGS += -Wno-unused-label
-EXTRA_CFLAGS += -Wno-unused-parameter
-EXTRA_CFLAGS += -Wno-unused-function
-EXTRA_CFLAGS += -Wno-unused
+EXTRA_CFLAGS += -I$(src)/include -I$(src)/hal -g
 
-#EXTRA_CFLAGS += -Wno-uninitialized
+ccflags-y += -D__CHECK_ENDIAN__
 
-EXTRA_CFLAGS += -I$(src)/include -I$(src)/hal
-
-EXTRA_LDFLAGS += --strip-debug
+#EXTRA_LDFLAGS += --strip-debug
 
 ########################## Features ###########################
 CONFIG_HW_PWRP_DETECTION = n
@@ -101,12 +94,11 @@ _HAL_INTFS_FILES +=	\
 _HAL_INTFS_FILES += hal/sdio_ops.o
 
 _OUTSRC_FILES += hal/HalHWImg8723B_BB.o\
-								hal/HalHWImg8723B_MAC.o\
-								hal/HalHWImg8723B_RF.o\
-								hal/HalHWImg8723B_FW.o\
-								hal/odm_RegConfig8723B.o\
-								hal/HalPhyRf_8723B.o\
-								hal/odm_RTL8723B.o
+			hal/HalHWImg8723B_MAC.o\
+			hal/HalHWImg8723B_RF.o\
+			hal/odm_RegConfig8723B.o\
+			hal/HalPhyRf_8723B.o\
+			hal/odm_RTL8723B.o
 
 ########### END OF PATH  #################################
 
@@ -173,7 +165,6 @@ EXTRA_CFLAGS += -DCONFIG_RTW_SDIO_PM_KEEP_POWER
 endif
 
 ifeq ($(CONFIG_PLATFORM_I386_PC), y)
-EXTRA_CFLAGS += -DCONFIG_LITTLE_ENDIAN
 SUBARCH := $(shell uname -m | sed -e s/i.86/i386/)
 ARCH ?= $(SUBARCH)
 CROSS_COMPILE ?=
@@ -229,6 +220,8 @@ strip:
 
 install:
 	install -p -m 644 $(MODULE_NAME).ko  $(MODDESTDIR)
+	@cp -n rtl8723bs_nic.bin /lib/firmware/rtlwifi/rtl8723bs_nic.bin
+	@cp -n rtl8723bs_wowlan.bin /lib/firmware/rtlwifi/rtl8723bs_wowlan.bin
 	/sbin/depmod -a ${KVER}
 
 uninstall:
@@ -239,6 +232,11 @@ config_r:
 	@echo "make config"
 	/bin/bash script/Configure script/config.in
 
+cppcheck: cppcheck.log
+
+cppcheck.log:
+	@echo "Creating cppcheck.log"
+	cppcheck -f --enable=all -Iinclude -Ihal -Ios_dep  . 2> cppcheck.log
 
 .PHONY: modules clean
 
@@ -248,4 +246,5 @@ clean:
 		core/*.mod.c core/*.mod *.o core/.*.cmd core/*.ko \
 		os_dep/*.mod.c os_dep/*.mod os_dep/*.o os_dep/.*.cmd *.ko \
 		platform/*.mod.c platform/*.mod platform/*.o platform/.*.cmd platform/*.ko \
-		Module.symvers Module.markers modules.order *.mod.c *.mod *.o .*.cmd *.ko *~ .tmp_versions
+		Module.symvers Module.markers modules.order *.mod.c *.mod *.o .*.cmd *.ko *~ .tmp_versions \
+		cppcheck.log

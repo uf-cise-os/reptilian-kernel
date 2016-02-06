@@ -11,19 +11,14 @@
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
  ******************************************************************************/
 #ifndef __SDIO_OSINTF_H__
 #define __SDIO_OSINTF_H__
 
 
 
-u8 sd_hal_bus_init(PADAPTER padapter);
-u8 sd_hal_bus_deinit(PADAPTER padapter);
-void sd_c2h_hdl(PADAPTER padapter);
+u8 sd_hal_bus_init(struct adapter *padapter);
+u8 sd_hal_bus_deinit(struct adapter *padapter);
+void sd_c2h_hdl(struct adapter *padapter);
 
 #endif

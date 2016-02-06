@@ -11,11 +11,6 @@
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
  ******************************************************************************/
 #ifndef __OSDEP_SERVICE_H_
 #define __OSDEP_SERVICE_H_
@@ -24,14 +19,11 @@
 #define _FAIL		0
 #define _SUCCESS	1
 #define RTW_RX_HANDLED 2
-//#define RTW_STATUS_TIMEDOUT -110
 
 #include <osdep_service_linux.h>
 
-//#include <rtw_byteorder.h>
-
 #ifndef BIT
-	#define BIT(x)	( 1 << (x))
+	#define BIT(x)	(1 << (x))
 #endif
 
 #define BIT0	0x00000001
@@ -78,7 +70,7 @@ extern int RTW_STATUS_CODE(int error_code);
 enum mstat_f {
 	/* type: 0x00ff */
 	MSTAT_TYPE_VIR = 0x00,
-	MSTAT_TYPE_PHY= 0x01,
+	MSTAT_TYPE_PHY = 0x01,
 	MSTAT_TYPE_SKB = 0x02,
 	MSTAT_TYPE_USB = 0x03,
 	MSTAT_TYPE_MAX = 0x04,
@@ -102,11 +94,11 @@ typedef enum mstat_status{
 	MSTAT_FREE
 } MSTAT_STATUS;
 
-#define rtw_mstat_update(flag, status, sz) do {} while(0)
-#define rtw_mstat_dump(sel) do {} while(0)
-u8*	_rtw_zmalloc(u32 sz);
-u8*	_rtw_malloc(u32 sz);
-void	_kfree(u8 *pbuf, u32 sz);
+#define rtw_mstat_update(flag, status, sz) do {} while (0)
+#define rtw_mstat_dump(sel) do {} while (0)
+u8*_rtw_zmalloc(u32 sz);
+u8*_rtw_malloc(u32 sz);
+void _kfree(u8 *pbuf, u32 sz);
 
 struct sk_buff *_rtw_skb_alloc(u32 sz);
 struct sk_buff *_rtw_skb_copy(const struct sk_buff *skb);
@@ -124,15 +116,9 @@ int _rtw_netif_rx(_nic_hdl ndev, struct sk_buff *skb);
 #define rtw_skb_clone_f(skb, mstat_f)	_rtw_skb_clone((skb))
 #define rtw_netif_rx(ndev, skb) _rtw_netif_rx(ndev, skb)
 
-extern void	_rtw_init_queue(_queue	*pqueue);
+extern void _rtw_init_queue(struct __queue	*pqueue);
 
 extern void rtw_init_timer(_timer *ptimer, void *padapter, void *pfunc);
-
-
-__inline static unsigned char _cancel_timer_ex(_timer *ptimer)
-{
-	return del_timer_sync(ptimer);
-}
 
 static __inline void thread_enter(char *name)
 {
@@ -163,7 +149,7 @@ __inline static int rtw_bug_check(void *parg1, void *parg2, void *parg3, void *p
 __inline static u32 _RND4(u32 sz)
 {
 
-	u32	val;
+	u32 val;
 
 	val = ((sz >> 2) + ((sz & 3) ? 1: 0)) << 2;
 
@@ -174,7 +160,7 @@ __inline static u32 _RND4(u32 sz)
 __inline static u32 _RND8(u32 sz)
 {
 
-	u32	val;
+	u32 val;
 
 	val = ((sz >> 3) + ((sz & 7) ? 1: 0)) << 3;
 
@@ -186,7 +172,7 @@ __inline static u32 _RND8(u32 sz)
 #define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
 #endif
 #ifndef MAC_ARG
-#define MAC_ARG(x) ((u8*)(x))[0],((u8*)(x))[1],((u8*)(x))[2],((u8*)(x))[3],((u8*)(x))[4],((u8*)(x))[5]
+#define MAC_ARG(x) ((u8 *)(x))[0], ((u8 *)(x))[1], ((u8 *)(x))[2], ((u8 *)(x))[3], ((u8 *)(x))[4], ((u8 *)(x))[5]
 #endif
 
 
@@ -195,9 +181,9 @@ extern void rtw_softap_lock_suspend(void);
 extern void rtw_softap_unlock_suspend(void);
 #endif
 
-//File operation APIs, just for linux now
+/* File operation APIs, just for linux now */
 extern int rtw_is_file_readable(char *path);
-extern int rtw_retrive_from_file(char *path, u8* buf, u32 sz);
+extern int rtw_retrive_from_file(char *path, u8 *buf, u32 sz);
 
 extern void rtw_free_netdev(struct net_device * netdev);
 
@@ -286,7 +272,7 @@ bool rtw_cbuf_push(struct rtw_cbuf *cbuf, void *buf);
 void *rtw_cbuf_pop(struct rtw_cbuf *cbuf);
 struct rtw_cbuf *rtw_cbuf_alloc(u32 size);
 
-// String handler
+/*  String handler */
 /*
  * Write formatted output to sized buffer
  */

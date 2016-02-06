@@ -11,26 +11,14 @@
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
  ******************************************************************************/
 #ifndef _RTL871X_BYTEORDER_H_
 #define _RTL871X_BYTEORDER_H_
 
-
-#if defined (CONFIG_LITTLE_ENDIAN) && defined (CONFIG_BIG_ENDIAN)
-#error "Shall be CONFIG_LITTLE_ENDIAN or CONFIG_BIG_ENDIAN, but not both!\n"
-#endif
-
-#if defined (CONFIG_LITTLE_ENDIAN)
+#if defined (__LITTLE_ENDIAN)
 #include <linux/byteorder/little_endian.h>
-#elif defined (CONFIG_BIG_ENDIAN)
-#  include <linux/byteorder/big_endian.h>
 #else
-#  error "Must be LITTLE/BIG Endian Host"
+#  include <linux/byteorder/big_endian.h>
 #endif
 
 #endif /* _RTL871X_BYTEORDER_H_ */

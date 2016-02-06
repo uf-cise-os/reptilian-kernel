@@ -11,15 +11,11 @@
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
  ******************************************************************************/
 #ifndef __RTW_DEBUG_H__
 #define __RTW_DEBUG_H__
 
+#include <linux/trace_seq.h>
 
 #define _drv_always_		1
 #define _drv_emerg_			2
@@ -60,7 +56,7 @@
 #define _module_hci_ops_os_c_			BIT(24)
 #define _module_rtl871x_ioctl_os_c		BIT(25)
 #define _module_rtl8712_cmd_c_		BIT(26)
-//#define _module_efuse_			BIT(27)
+/* define _module_efuse_			BIT(27) */
 #define	_module_rtl8192c_xmit_c_ BIT(28)
 #define _module_hal_xmit_c_	BIT(28)
 #define _module_efuse_			BIT(29)
@@ -143,18 +139,15 @@
 	#define	_MODULE_DEFINE_	_module_efuse_
 #endif
 
-#define RT_TRACE(_Comp, _Level, Fmt) do{}while(0)
-#define _func_enter_ do{}while(0)
-#define _func_exit_ do{}while(0)
-#define RT_PRINT_DATA(_Comp, _Level, _TitleString, _HexData, _HexDataLen) do{}while(0)
+#define RT_TRACE(_Comp, _Level, Fmt) do{}while (0)
+#define RT_PRINT_DATA(_Comp, _Level, _TitleString, _HexData, _HexDataLen) do{}while (0)
 
-#define DBG_871X(x, ...) do {} while(0)
-#define MSG_8192C(x, ...) do {} while(0)
-#define DBG_8192C(x,...) do {} while(0)
-#define DBG_871X_LEVEL(x,...) do {} while(0)
+#define DBG_871X(x, ...) do {} while (0)
+#define MSG_8192C(x, ...) do {} while (0)
+#define DBG_8192C(x,...) do {} while (0)
+#define DBG_871X_LEVEL(x,...) do {} while (0)
 
 #undef _dbgdump
-#undef _seqdump
 
 #ifndef _RTL871X_DEBUG_C_
 	extern u32 GlobalDebugLevel;
@@ -162,9 +155,8 @@
 #endif
 
 #define _dbgdump printk
-#define _seqdump seq_printf
 
-#define DRIVER_PREFIX "RTL871X: "
+#define DRIVER_PREFIX "RTL8723BS: "
 
 #if defined(_dbgdump)
 
@@ -178,7 +170,7 @@
 			else \
 				_dbgdump(DRIVER_PREFIX fmt, ##arg);\
 		}\
-	}while(0)
+	}while (0)
 
 /* without driver-defined prefix */
 #undef _DBG_871X_LEVEL
@@ -190,32 +182,27 @@
 			else \
 				_dbgdump(fmt, ##arg);\
 		}\
-	}while(0)
+	}while (0)
 
-#if defined(_seqdump)
 #define RTW_DBGDUMP NULL /* 'stream' for _dbgdump */
 
 /* dump message to selected 'stream' */
-#define DBG_871X_SEL(sel, fmt, arg...) \
-	do {\
-		if (sel == RTW_DBGDUMP)\
-			_DBG_871X_LEVEL(_drv_always_, fmt, ##arg); \
-		else {\
-			if(_seqdump(sel, fmt, ##arg)) /*rtw_warn_on(1)*/; \
-		} \
-	}while(0)
+#define DBG_871X_SEL(sel, fmt, arg...)					\
+	do {								\
+		if (sel == RTW_DBGDUMP)					\
+			_DBG_871X_LEVEL(_drv_always_, fmt, ##arg);	\
+		else							\
+			seq_printf(sel, fmt, ##arg);			\
+	} while (0)
 
 /* dump message to selected 'stream' with driver-defined prefix */
-#define DBG_871X_SEL_NL(sel, fmt, arg...) \
-	do {\
-		if (sel == RTW_DBGDUMP)\
-			DBG_871X_LEVEL(_drv_always_, fmt, ##arg); \
-		else {\
-			if(_seqdump(sel, fmt, ##arg)) /*rtw_warn_on(1)*/; \
-		} \
-	}while(0)
-
-#endif /* defined(_seqdump) */
+#define DBG_871X_SEL_NL(sel, fmt, arg...)				\
+	do {								\
+		if (sel == RTW_DBGDUMP)					\
+			DBG_871X_LEVEL(_drv_always_, fmt, ##arg);	\
+		else							\
+			seq_printf(sel, fmt, ##arg);			\
+	} while (0)
 
 #endif /* defined(_dbgdump) */
 
@@ -224,17 +211,17 @@
 	#undef DBG_871X
 	#define DBG_871X(...)     do {\
 		_dbgdump(DRIVER_PREFIX __VA_ARGS__);\
-	}while(0)
+	}while (0)
 
 	#undef MSG_8192C
 	#define MSG_8192C(...)     do {\
 		_dbgdump(DRIVER_PREFIX __VA_ARGS__);\
-	}while(0)
+	}while (0)
 
 	#undef DBG_8192C
 	#define DBG_8192C(...)     do {\
 		_dbgdump(DRIVER_PREFIX __VA_ARGS__);\
-	}while(0)
+	}while (0)
 #endif /* defined(_dbgdump) */
 #endif /* CONFIG_DEBUG */
 
@@ -245,43 +232,25 @@
 	#undef RT_TRACE
 	#define RT_TRACE(_Comp, _Level, Fmt)\
 	do {\
-		if((_Comp & GlobalDebugComponents) && (_Level <= GlobalDebugLevel)) {\
+		if ((_Comp & GlobalDebugComponents) && (_Level <= GlobalDebugLevel)) {\
 			_dbgdump("%s [0x%08x,%d]", DRIVER_PREFIX, (unsigned int)_Comp, _Level);\
 			_dbgdump Fmt;\
 		}\
-	}while(0)
+	}while (0)
 
 #endif /* defined(_dbgdump) && defined(_MODULE_DEFINE_) */
 
 
 #if	defined(_dbgdump)
-	#undef  _func_enter_
-	#define _func_enter_ \
-	do {	\
-		if (GlobalDebugLevel >= _drv_debug_) \
-		{																	\
-			_dbgdump("\n %s : %s enters at %d\n", DRIVER_PREFIX, __FUNCTION__, __LINE__);\
-		}		\
-	} while(0)
-
-	#undef  _func_exit_
-	#define _func_exit_ \
-	do {	\
-		if (GlobalDebugLevel >= _drv_debug_) \
-		{																	\
-			_dbgdump("\n %s : %s exits at %d\n", DRIVER_PREFIX, __FUNCTION__, __LINE__); \
-		}	\
-	} while(0)
-
 	#undef RT_PRINT_DATA
 	#define RT_PRINT_DATA(_Comp, _Level, _TitleString, _HexData, _HexDataLen)			\
-		if(((_Comp) & GlobalDebugComponents) && (_Level <= GlobalDebugLevel))	\
+		if (((_Comp) & GlobalDebugComponents) && (_Level <= GlobalDebugLevel))	\
 		{									\
 			int __i;								\
-			u8	*ptr = (u8 *)_HexData;				\
+			u8 *ptr = (u8 *)_HexData;				\
 			_dbgdump("%s", DRIVER_PREFIX);						\
 			_dbgdump(_TitleString);						\
-			for( __i=0; __i<(int)_HexDataLen; __i++ )				\
+			for (__i = 0; __i<(int)_HexDataLen; __i++)				\
 			{								\
 				_dbgdump("%02X%s", ptr[__i], (((__i + 1) % 4) == 0)?"  ":" ");	\
 				if (((__i + 1) % 16) == 0)	_dbgdump("\n");			\
@@ -300,11 +269,11 @@
 void dump_drv_version(void *sel);
 void dump_log_level(void *sel);
 
-void sd_f0_reg_dump(void *sel, _adapter *adapter);
+void sd_f0_reg_dump(void *sel, struct adapter *adapter);
 
-void mac_reg_dump(void *sel, _adapter *adapter);
-void bb_reg_dump(void *sel, _adapter *adapter);
-void rf_reg_dump(void *sel, _adapter *adapter);
+void mac_reg_dump(void *sel, struct adapter *adapter);
+void bb_reg_dump(void *sel, struct adapter *adapter);
+void rf_reg_dump(void *sel, struct adapter *adapter);
 
 #ifdef CONFIG_PROC_DEBUG
 ssize_t proc_set_write_reg(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
@@ -359,7 +328,7 @@ ssize_t proc_set_rx_stbc(struct file *file, const char __user *buffer, size_t co
 int proc_get_en_fwps(struct seq_file *m, void *v);
 ssize_t proc_set_en_fwps(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
 
-//int proc_get_two_path_rssi(struct seq_file *m, void *v);
+/* int proc_get_two_path_rssi(struct seq_file *m, void *v); */
 int proc_get_rssi_disp(struct seq_file *m, void *v);
 ssize_t proc_set_rssi_disp(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data);
 
@@ -383,4 +352,4 @@ int proc_get_int_logs(struct seq_file *m, void *v);
 
 #endif /* CONFIG_PROC_DEBUG */
 
-#endif	//__RTW_DEBUG_H__
+#endif	/* __RTW_DEBUG_H__ */

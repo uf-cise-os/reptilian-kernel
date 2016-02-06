@@ -5,12 +5,9 @@
  *****************************************************************************/
 
 #include <drv_types.h>
+#include <rtw_debug.h>
 
 #include <rtw_wifi_regd.h>
-
-static struct country_code_to_enum_rd allCountries[] = {
-	{COUNTRY_CODE_USER, "RD"},
-};
 
 /*
  * REG_RULE(freq start, freq end, bandwidth, max gain, eirp, reg_flags)
@@ -119,8 +116,7 @@ static int rtw_ieee80211_channel_to_frequency(int chan, int band)
 
 static void _rtw_reg_apply_flags(struct wiphy *wiphy)
 {
-	_adapter *padapter = wiphy_to_adapter(wiphy);
-	u8 channel_plan = padapter->mlmepriv.ChannelPlan;
+	struct adapter *padapter = wiphy_to_adapter(wiphy);
 	struct mlme_ext_priv *pmlmeext = &padapter->mlmeextpriv;
 	RT_CHANNEL_INFO *channel_set = pmlmeext->channel_set;
 	u8 max_chan_nums = pmlmeext->max_chan_nums;
@@ -131,7 +127,7 @@ static void _rtw_reg_apply_flags(struct wiphy *wiphy)
 	u16 channel;
 	u32 freq;
 
-	// all channels disable
+	/*  all channels disable */
 	for (i = 0; i < IEEE80211_NUM_BANDS; i++) {
 		sband = wiphy->bands[i];
 
@@ -145,7 +141,7 @@ static void _rtw_reg_apply_flags(struct wiphy *wiphy)
 		}
 	}
 
-	// channels apply by channel plans.
+	/*  channels apply by channel plans. */
 	for (i = 0; i < max_chan_nums; i++) {
 		channel = channel_set[i].ChannelNum;
 		freq =
@@ -201,11 +197,11 @@ static void _rtw_regd_init_wiphy(struct rtw_regulatory *reg,
 	_rtw_reg_apply_flags(wiphy);
 }
 
-int rtw_regd_init(_adapter * padapter,
+int rtw_regd_init(struct adapter *padapter,
 		  void (*reg_notifier) (struct wiphy * wiphy,
-				       struct regulatory_request * request))
+				       struct regulatory_request *request))
 {
-	//struct registry_priv  *registrypriv = &padapter->registrypriv;
+	/* struct registry_priv  *registrypriv = &padapter->registrypriv; */
 	struct wiphy *wiphy = padapter->rtw_wdev->wiphy;
 	_rtw_regd_init_wiphy(NULL, wiphy, reg_notifier);
 

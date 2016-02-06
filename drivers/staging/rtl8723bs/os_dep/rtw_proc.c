@@ -11,14 +11,10 @@
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
  ******************************************************************************/
 
 #include <drv_types.h>
+#include <rtw_debug.h>
 #include "rtw_proc.h"
 
 #ifdef CONFIG_PROC_DEBUG
@@ -39,7 +35,7 @@ inline struct proc_dir_entry *rtw_proc_create_dir(const char *name, struct proc_
 }
 
 inline struct proc_dir_entry *rtw_proc_create_entry(const char *name, struct proc_dir_entry *parent,
-	const struct file_operations *fops, void * data)
+	const struct file_operations *fops, void *data)
 {
 	struct proc_dir_entry *entry;
 
@@ -74,12 +70,10 @@ static ssize_t proc_set_log_level(struct file *file, const char __user *buffer, 
 		return -EINVAL;
 
 	if (buffer && !copy_from_user(tmp, buffer, sizeof(tmp))) {
-
-		int num = sscanf(tmp, "%d ", &log_level);
-
-		if( log_level >= _drv_always_ && log_level <= _drv_debug_ )
+		sscanf(tmp, "%d ", &log_level);
+		if (log_level >= _drv_always_ && log_level <= _drv_debug_)
 		{
-			GlobalDebugLevel= log_level;
+			GlobalDebugLevel = log_level;
 			printk("%d\n", GlobalDebugLevel);
 		}
 	} else {
@@ -102,7 +96,7 @@ static const int drv_proc_hdls_num = sizeof(drv_proc_hdls) / sizeof(struct rtw_p
 
 static int rtw_drv_proc_open(struct inode *inode, struct file *file)
 {
-	//struct net_device *dev = proc_get_parent_data(inode);
+	/* struct net_device *dev = proc_get_parent_data(inode); */
 	ssize_t index = (ssize_t)PDE_DATA(inode);
 	const struct rtw_proc_hdl *hdl = drv_proc_hdls+index;
        return single_open(file, hdl->show, NULL);
@@ -147,7 +141,7 @@ int rtw_drv_proc_init(void)
 		goto exit;
 	}
 
-	for (i=0;i<drv_proc_hdls_num;i++) {
+	for (i = 0;i<drv_proc_hdls_num;i++) {
 		entry = rtw_proc_create_entry(drv_proc_hdls[i].name, rtw_proc, &rtw_drv_proc_fops, (void *)i);
 		if (!entry) {
 			rtw_warn_on(1);
@@ -168,7 +162,7 @@ void rtw_drv_proc_deinit(void)
 	if (rtw_proc == NULL)
 		return;
 
-	for (i=0;i<drv_proc_hdls_num;i++)
+	for (i = 0;i<drv_proc_hdls_num;i++)
 		remove_proc_entry(drv_proc_hdls[i].name, rtw_proc);
 
 	remove_proc_entry(RTW_PROC_NAME, get_proc_net);
@@ -178,7 +172,7 @@ void rtw_drv_proc_deinit(void)
 static int proc_get_sd_f0_reg_dump(struct seq_file *m, void *v)
 {
 	struct net_device *dev = m->private;
-	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+	struct adapter *adapter = (struct adapter *)rtw_netdev_priv(dev);
 
 	sd_f0_reg_dump(m, adapter);
 
@@ -188,7 +182,7 @@ static int proc_get_sd_f0_reg_dump(struct seq_file *m, void *v)
 static int proc_get_mac_reg_dump(struct seq_file *m, void *v)
 {
 	struct net_device *dev = m->private;
-	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+	struct adapter *adapter = (struct adapter *)rtw_netdev_priv(dev);
 
 	mac_reg_dump(m, adapter);
 
@@ -198,7 +192,7 @@ static int proc_get_mac_reg_dump(struct seq_file *m, void *v)
 static int proc_get_bb_reg_dump(struct seq_file *m, void *v)
 {
 	struct net_device *dev = m->private;
-	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+	struct adapter *adapter = (struct adapter *)rtw_netdev_priv(dev);
 
 	bb_reg_dump(m, adapter);
 
@@ -208,7 +202,7 @@ static int proc_get_bb_reg_dump(struct seq_file *m, void *v)
 static int proc_get_rf_reg_dump(struct seq_file *m, void *v)
 {
 	struct net_device *dev = m->private;
-	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+	struct adapter *adapter = (struct adapter *)rtw_netdev_priv(dev);
 
 	rf_reg_dump(m, adapter);
 
@@ -217,10 +211,10 @@ static int proc_get_rf_reg_dump(struct seq_file *m, void *v)
 static int proc_get_linked_info_dump(struct seq_file *m, void *v)
 {
 	struct net_device *dev = m->private;
-	_adapter *padapter = (_adapter *)rtw_netdev_priv(dev);
+	struct adapter *padapter = (struct adapter *)rtw_netdev_priv(dev);
 
-	if(padapter)
-		DBG_871X_SEL_NL(m, "linked_info_dump :%s \n", (padapter->bLinkInfoDump)?"enable":"disable");
+	if (padapter)
+		DBG_871X_SEL_NL(m, "linked_info_dump :%s\n", (padapter->bLinkInfoDump)?"enable":"disable");
 
 	return 0;
 }
@@ -228,23 +222,20 @@ static int proc_get_linked_info_dump(struct seq_file *m, void *v)
 static ssize_t proc_set_linked_info_dump(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
 {
 	struct net_device *dev = data;
-	_adapter *padapter = (_adapter *)rtw_netdev_priv(dev);
+	struct adapter *padapter = (struct adapter *)rtw_netdev_priv(dev);
 
 	char tmp[2];
-	int mode=0;
+	int mode = 0;
 
 	if (count < 1)
 		return -EFAULT;
 
 	if (buffer && !copy_from_user(tmp, buffer, sizeof(tmp))) {
-
-		int num = sscanf(tmp, "%d ", &mode);
-
-		if( padapter )
+		if (padapter)
 		{
-			//padapter->bLinkInfoDump = mode;
-			//DBG_871X("linked_info_dump =%s \n", (padapter->bLinkInfoDump)?"enable":"disable");
-			 linked_info_dump(padapter,mode);
+			/* padapter->bLinkInfoDump = mode; */
+			/* DBG_871X("linked_info_dump =%s\n", (padapter->bLinkInfoDump)?"enable":"disable"); */
+			 linked_info_dump(padapter, mode);
 		}
 
 	}
@@ -256,18 +247,18 @@ static ssize_t proc_set_linked_info_dump(struct file *file, const char __user *b
 static int proc_get_rx_info(struct seq_file *m, void *v)
 {
 	struct net_device *dev = m->private;
-	_adapter *padapter = (_adapter *)rtw_netdev_priv(dev);
+	struct adapter *padapter = (struct adapter *)rtw_netdev_priv(dev);
 	struct dvobj_priv *psdpriv = padapter->dvobj;
 	struct debug_priv *pdbgpriv = &psdpriv->drv_dbg;
 
-	//Counts of packets whose seq_num is less than preorder_ctrl->indicate_seq, Ex delay, retransmission, redundant packets and so on
-	DBG_871X_SEL_NL(m,"Counts of Packets Whose Seq_Num Less Than Reorder Control Seq_Num: %llu\n",(unsigned long long)pdbgpriv->dbg_rx_ampdu_drop_count);
-	//How many times the Rx Reorder Timer is triggered.
-	DBG_871X_SEL_NL(m,"Rx Reorder Time-out Trigger Counts: %llu\n",(unsigned long long)pdbgpriv->dbg_rx_ampdu_forced_indicate_count);
-	//Total counts of packets loss
-	DBG_871X_SEL_NL(m,"Rx Packet Loss Counts: %llu\n",(unsigned long long)pdbgpriv->dbg_rx_ampdu_loss_count);
-	DBG_871X_SEL_NL(m,"Duplicate Management Frame Drop Count: %llu\n",(unsigned long long)pdbgpriv->dbg_rx_dup_mgt_frame_drop_count);
-	DBG_871X_SEL_NL(m,"AMPDU BA window shift Count: %llu\n",(unsigned long long)pdbgpriv->dbg_rx_ampdu_window_shift_cnt);
+	/* Counts of packets whose seq_num is less than preorder_ctrl->indicate_seq, Ex delay, retransmission, redundant packets and so on */
+	DBG_871X_SEL_NL(m,"Counts of Packets Whose Seq_Num Less Than Reorder Control Seq_Num: %llu\n", (unsigned long long)pdbgpriv->dbg_rx_ampdu_drop_count);
+	/* How many times the Rx Reorder Timer is triggered. */
+	DBG_871X_SEL_NL(m,"Rx Reorder Time-out Trigger Counts: %llu\n", (unsigned long long)pdbgpriv->dbg_rx_ampdu_forced_indicate_count);
+	/* Total counts of packets loss */
+	DBG_871X_SEL_NL(m,"Rx Packet Loss Counts: %llu\n", (unsigned long long)pdbgpriv->dbg_rx_ampdu_loss_count);
+	DBG_871X_SEL_NL(m,"Duplicate Management Frame Drop Count: %llu\n", (unsigned long long)pdbgpriv->dbg_rx_dup_mgt_frame_drop_count);
+	DBG_871X_SEL_NL(m,"AMPDU BA window shift Count: %llu\n", (unsigned long long)pdbgpriv->dbg_rx_ampdu_window_shift_cnt);
 	return 0;
 }
 
@@ -275,12 +266,12 @@ static int proc_get_rx_info(struct seq_file *m, void *v)
 static ssize_t proc_reset_rx_info(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
 {
 	struct net_device *dev = data;
-	_adapter *padapter = (_adapter *)rtw_netdev_priv(dev);
+	struct adapter *padapter = (struct adapter *)rtw_netdev_priv(dev);
 	struct dvobj_priv *psdpriv = padapter->dvobj;
 	struct debug_priv *pdbgpriv = &psdpriv->drv_dbg;
 	char cmd[32];
 	if (buffer && !copy_from_user(cmd, buffer, sizeof(cmd))) {
-		if('0' == cmd[0]){
+		if ('0' == cmd[0]) {
 			pdbgpriv->dbg_rx_ampdu_drop_count = 0;
 			pdbgpriv->dbg_rx_ampdu_forced_indicate_count = 0;
 			pdbgpriv->dbg_rx_ampdu_loss_count = 0;
@@ -294,23 +285,19 @@ static ssize_t proc_reset_rx_info(struct file *file, const char __user *buffer, 
 
 static int proc_get_cam(struct seq_file *m, void *v)
 {
-	struct net_device *dev = m->private;
-	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
-	u8 i;
-
 	return 0;
 }
 
 static ssize_t proc_set_cam(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
 {
 	struct net_device *dev = data;
-	_adapter *adapter;
+	struct adapter *adapter;
 
 	char tmp[32];
 	char cmd[4];
 	u8 id;
 
-	adapter = (_adapter *)rtw_netdev_priv(dev);
+	adapter = (struct adapter *)rtw_netdev_priv(dev);
 	if (!adapter)
 		return -EFAULT;
 
@@ -319,7 +306,7 @@ static ssize_t proc_set_cam(struct file *file, const char __user *buffer, size_t
 		/* c <id>: clear specific cam entry */
 		/* wfc <id>: write specific cam entry from cam cache */
 
-		int num = sscanf(tmp, "%s %hhu", cmd, &id);
+		int num = sscanf(tmp, "%4s %hhu", cmd, &id);
 
 		if (num < 2)
 			return count;
@@ -338,33 +325,33 @@ static ssize_t proc_set_cam(struct file *file, const char __user *buffer, size_t
 static int proc_get_cam_cache(struct seq_file *m, void *v)
 {
 	struct net_device *dev = m->private;
-	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+	struct adapter *adapter = (struct adapter *)rtw_netdev_priv(dev);
 	struct dvobj_priv *dvobj = adapter_to_dvobj(adapter);
 	u8 i;
 
 	DBG_871X_SEL_NL(m, "cam bitmap:0x%016llx\n", dvobj->cam_ctl.bitmap);
 
 	DBG_871X_SEL_NL(m, "%-2s %-6s %-17s %-32s %-3s %-7s"
-		//" %-2s %-2s %-4s %-5s"
+		/*  %-2s %-2s %-4s %-5s" */
 		"\n"
 		, "id", "ctrl", "addr", "key", "kid", "type"
-		//, "MK", "GK", "MFB", "valid"
+		/*  "MK", "GK", "MFB", "valid" */
 	);
 
-	for (i=0;i<32;i++) {
+	for (i = 0;i<32;i++) {
 		if (dvobj->cam_cache[i].ctrl != 0)
 			DBG_871X_SEL_NL(m, "%2u 0x%04x "MAC_FMT" "KEY_FMT" %3u %-7s"
-				//" %2u %2u 0x%02x %5u"
+				/*  %2u %2u 0x%02x %5u" */
 				"\n", i
 				, dvobj->cam_cache[i].ctrl
 				, MAC_ARG(dvobj->cam_cache[i].mac)
 				, KEY_ARG(dvobj->cam_cache[i].key)
 				, (dvobj->cam_cache[i].ctrl)&0x03
 				, security_type_str(((dvobj->cam_cache[i].ctrl)>>2)&0x07)
-				//, ((dvobj->cam_cache[i].ctrl)>>5)&0x01
-				//, ((dvobj->cam_cache[i].ctrl)>>6)&0x01
-				//, ((dvobj->cam_cache[i].ctrl)>>8)&0x7f
-				//, ((dvobj->cam_cache[i].ctrl)>>15)&0x01
+				/*  ((dvobj->cam_cache[i].ctrl)>>5)&0x01 */
+				/*  ((dvobj->cam_cache[i].ctrl)>>6)&0x01 */
+				/*  ((dvobj->cam_cache[i].ctrl)>>8)&0x7f */
+				/*  ((dvobj->cam_cache[i].ctrl)>>15)&0x01 */
 			);
 	}
 
@@ -420,13 +407,13 @@ static const struct rtw_proc_hdl adapter_proc_hdls [] = {
 
 	{"en_fwps", proc_get_en_fwps, proc_set_en_fwps},
 
-	//{"path_rssi", proc_get_two_path_rssi, NULL},
-	{"rssi_disp",proc_get_rssi_disp, proc_set_rssi_disp},
+	/* path_rssi", proc_get_two_path_rssi, NULL}, */
+	{"rssi_disp", proc_get_rssi_disp, proc_set_rssi_disp},
 
 	{"btcoex_dbg", proc_get_btcoex_dbg, proc_set_btcoex_dbg},
 	{"btcoex", proc_get_btcoex_info, NULL},
 
-	{"linked_info_dump",proc_get_linked_info_dump,proc_set_linked_info_dump},
+	{"linked_info_dump", proc_get_linked_info_dump, proc_set_linked_info_dump},
 #ifdef CONFIG_DBG_COUNTER
 	{"rx_logs", proc_get_rx_logs, NULL},
 	{"tx_logs", proc_get_tx_logs, NULL},
@@ -468,7 +455,7 @@ static const struct file_operations rtw_adapter_proc_fops = {
 int proc_get_odm_dbg_comp(struct seq_file *m, void *v)
 {
 	struct net_device *dev = m->private;
-	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+	struct adapter *adapter = (struct adapter *)rtw_netdev_priv(dev);
 
 	rtw_odm_dbg_comp_msg(m, adapter);
 
@@ -478,7 +465,7 @@ int proc_get_odm_dbg_comp(struct seq_file *m, void *v)
 ssize_t proc_set_odm_dbg_comp(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
 {
 	struct net_device *dev = data;
-	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+	struct adapter *adapter = (struct adapter *)rtw_netdev_priv(dev);
 	char tmp[32];
 
 	u64 dbg_comp;
@@ -502,7 +489,7 @@ ssize_t proc_set_odm_dbg_comp(struct file *file, const char __user *buffer, size
 int proc_get_odm_dbg_level(struct seq_file *m, void *v)
 {
 	struct net_device *dev = m->private;
-	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+	struct adapter *adapter = (struct adapter *)rtw_netdev_priv(dev);
 
 	rtw_odm_dbg_level_msg(m, adapter);
 
@@ -512,7 +499,7 @@ int proc_get_odm_dbg_level(struct seq_file *m, void *v)
 ssize_t proc_set_odm_dbg_level(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
 {
 	struct net_device *dev = data;
-	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+	struct adapter *adapter = (struct adapter *)rtw_netdev_priv(dev);
 	char tmp[32];
 
 	u32 dbg_level;
@@ -536,7 +523,7 @@ ssize_t proc_set_odm_dbg_level(struct file *file, const char __user *buffer, siz
 static int proc_get_odm_ability(struct seq_file *m, void *v)
 {
 	struct net_device *dev = m->private;
-	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+	struct adapter *adapter = (struct adapter *)rtw_netdev_priv(dev);
 
 	rtw_odm_ability_msg(m, adapter);
 
@@ -546,7 +533,7 @@ static int proc_get_odm_ability(struct seq_file *m, void *v)
 static ssize_t proc_set_odm_ability(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
 {
 	struct net_device *dev = data;
-	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+	struct adapter *adapter = (struct adapter *)rtw_netdev_priv(dev);
 	char tmp[32];
 
 	u32 ability;
@@ -570,7 +557,7 @@ static ssize_t proc_set_odm_ability(struct file *file, const char __user *buffer
 int proc_get_odm_adaptivity(struct seq_file *m, void *v)
 {
 	struct net_device *dev = m->private;
-	_adapter *padapter = (_adapter *)rtw_netdev_priv(dev);
+	struct adapter *padapter = (struct adapter *)rtw_netdev_priv(dev);
 
 	rtw_odm_adaptivity_parm_msg(m, padapter);
 
@@ -580,7 +567,7 @@ int proc_get_odm_adaptivity(struct seq_file *m, void *v)
 ssize_t proc_set_odm_adaptivity(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
 {
 	struct net_device *dev = data;
-	_adapter *padapter = (_adapter *)rtw_netdev_priv(dev);
+	struct adapter *padapter = (struct adapter *)rtw_netdev_priv(dev);
 	char tmp[32];
 	u32 TH_L2H_ini;
 	s8 TH_EDCCA_HL_diff;
@@ -652,7 +639,7 @@ static struct proc_dir_entry *rtw_odm_proc_init(struct net_device *dev)
 {
 	struct proc_dir_entry *dir_odm = NULL;
 	struct proc_dir_entry *entry = NULL;
-	_adapter	*adapter = rtw_netdev_priv(dev);
+	struct adapter	*adapter = rtw_netdev_priv(dev);
 	ssize_t i;
 
 	if (adapter->dir_dev == NULL) {
@@ -673,7 +660,7 @@ static struct proc_dir_entry *rtw_odm_proc_init(struct net_device *dev)
 
 	adapter->dir_odm = dir_odm;
 
-	for (i=0;i<odm_proc_hdls_num;i++) {
+	for (i = 0;i<odm_proc_hdls_num;i++) {
 		entry = rtw_proc_create_entry(odm_proc_hdls[i].name, dir_odm, &rtw_odm_proc_fops, (void *)i);
 		if (!entry) {
 			rtw_warn_on(1);
@@ -685,7 +672,7 @@ exit:
 	return dir_odm;
 }
 
-static void rtw_odm_proc_deinit(_adapter	*adapter)
+static void rtw_odm_proc_deinit(struct adapter	*adapter)
 {
 	struct proc_dir_entry *dir_odm = NULL;
 	int i;
@@ -697,7 +684,7 @@ static void rtw_odm_proc_deinit(_adapter	*adapter)
 		return;
 	}
 
-	for (i=0;i<odm_proc_hdls_num;i++)
+	for (i = 0;i<odm_proc_hdls_num;i++)
 		remove_proc_entry(odm_proc_hdls[i].name, dir_odm);
 
 	remove_proc_entry("odm", adapter->dir_dev);
@@ -710,8 +697,7 @@ struct proc_dir_entry *rtw_adapter_proc_init(struct net_device *dev)
 	struct proc_dir_entry *drv_proc = rtw_proc;
 	struct proc_dir_entry *dir_dev = NULL;
 	struct proc_dir_entry *entry = NULL;
-	_adapter *adapter = rtw_netdev_priv(dev);
-	u8 rf_type;
+	struct adapter *adapter = rtw_netdev_priv(dev);
 	ssize_t i;
 
 	if (drv_proc == NULL) {
@@ -732,7 +718,7 @@ struct proc_dir_entry *rtw_adapter_proc_init(struct net_device *dev)
 
 	adapter->dir_dev = dir_dev;
 
-	for (i=0;i<adapter_proc_hdls_num;i++) {
+	for (i = 0;i<adapter_proc_hdls_num;i++) {
 		entry = rtw_proc_create_entry(adapter_proc_hdls[i].name, dir_dev, &rtw_adapter_proc_fops, (void *)i);
 		if (!entry) {
 			rtw_warn_on(1);
@@ -750,7 +736,7 @@ void rtw_adapter_proc_deinit(struct net_device *dev)
 {
 	struct proc_dir_entry *drv_proc = rtw_proc;
 	struct proc_dir_entry *dir_dev = NULL;
-	_adapter *adapter = rtw_netdev_priv(dev);
+	struct adapter *adapter = rtw_netdev_priv(dev);
 	int i;
 
 	dir_dev = adapter->dir_dev;
@@ -760,7 +746,7 @@ void rtw_adapter_proc_deinit(struct net_device *dev)
 		return;
 	}
 
-	for (i=0;i<adapter_proc_hdls_num;i++)
+	for (i = 0;i<adapter_proc_hdls_num;i++)
 		remove_proc_entry(adapter_proc_hdls[i].name, dir_dev);
 
 	rtw_odm_proc_deinit(adapter);
@@ -774,7 +760,7 @@ void rtw_adapter_proc_replace(struct net_device *dev)
 {
 	struct proc_dir_entry *drv_proc = rtw_proc;
 	struct proc_dir_entry *dir_dev = NULL;
-	_adapter *adapter = rtw_netdev_priv(dev);
+	struct adapter *adapter = rtw_netdev_priv(dev);
 	int i;
 
 	dir_dev = adapter->dir_dev;
@@ -784,7 +770,7 @@ void rtw_adapter_proc_replace(struct net_device *dev)
 		return;
 	}
 
-	for (i=0;i<adapter_proc_hdls_num;i++)
+	for (i = 0;i<adapter_proc_hdls_num;i++)
 		remove_proc_entry(adapter_proc_hdls[i].name, dir_dev);
 
 	rtw_odm_proc_deinit(adapter);

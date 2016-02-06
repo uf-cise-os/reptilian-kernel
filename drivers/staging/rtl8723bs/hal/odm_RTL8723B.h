@@ -11,23 +11,12 @@
  * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
  * more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110, USA
- *
- *
  ******************************************************************************/
 #ifndef	__ODM_RTL8723B_H__
 #define __ODM_RTL8723B_H__
 
 #define	DM_DIG_MIN_NIC_8723	0x1C
 
-s8
-odm_CCKRSSI_8723B(
-	IN		u1Byte	LNA_idx,
-	IN		u1Byte	VGA_idx
-	);
-
-
+s8 odm_CCKRSSI_8723B(u8 LNA_idx, u8 VGA_idx);
 
 #endif
