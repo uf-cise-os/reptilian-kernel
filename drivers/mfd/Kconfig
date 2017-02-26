@@ -419,6 +419,23 @@ config INTEL_SOC_PMIC
 	  thermal, charger and related power management functions
 	  on these systems.
 
+config INTEL_SOC_PMIC_CHTWC
+	# This is a bool as it provides an ACPI Opregion which must be
+	# available as soon as possible
+	bool "Support for Intel Cherry Trail Whiskey Cove PMIC"
+	depends on ACPI && HAS_IOMEM
+	select MFD_CORE
+	select REGMAP_I2C
+	select REGMAP_IRQ
+	# In order for the ACPI Opregion to be available the i2c-adapter
+	# driver must be builtin too, select it and its deps
+	select I2C
+	select COMMON_CLK
+	select I2C_DESIGNWARE_PLATFORM
+	help
+	  Select this option to enable support for the Intel Cherry Trail
+	  Whiskey Cove PMIC found on some Intel Cherry Trail systems.
+
 config MFD_INTEL_LPSS
 	tristate
 	select COMMON_CLK
