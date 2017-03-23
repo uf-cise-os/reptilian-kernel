@@ -470,8 +470,7 @@ extern void packagelist_exit(void);
 #define BY_USERID	(1 << 1)
 struct limit_search {
 	unsigned int flags;
-	const char *name;
-	size_t length;
+	struct qstr name;
 	userid_t userid;
 };
 
@@ -479,8 +478,6 @@ extern void setup_derived_state(struct inode *inode, perm_t perm, userid_t useri
 			uid_t uid, bool under_android, struct inode *top);
 extern void get_derived_permission(struct dentry *parent, struct dentry *dentry);
 extern void get_derived_permission_new(struct dentry *parent, struct dentry *dentry, const struct qstr *name);
-extern void drop_recursive(struct dentry *parent);
-extern void fixup_top_recursive(struct dentry *parent);
 extern void fixup_perms_recursive(struct dentry *dentry, struct limit_search *limit);
 
 extern void update_derived_permission_lock(struct dentry *dentry);
@@ -610,6 +607,11 @@ static inline void sdcardfs_copy_and_fix_attrs(struct inode *dest, const struct 
 static inline bool str_case_eq(const char *s1, const char *s2)
 {
 	return !strcasecmp(s1, s2);
+}
+
+static inline bool str_n_case_eq(const char *s1, const char *s2, size_t len)
+{
+	return !strncasecmp(s1, s2, len);
 }
 
 static inline bool qstr_case_eq(const struct qstr *q1, const struct qstr *q2)

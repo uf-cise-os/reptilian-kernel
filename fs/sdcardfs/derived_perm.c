@@ -205,13 +205,13 @@ void fixup_lower_ownership(struct dentry* dentry, const char *name) {
 			break;
 		case PERM_ANDROID_PACKAGE:
 			if (info->d_uid != 0)
-				gid = multiuser_get_ext_gid(info->userid, info->d_uid);
+				gid = multiuser_get_ext_gid(info->d_uid);
 			else
 				gid = multiuser_get_uid(info->userid, uid);
 			break;
 		case PERM_ANDROID_PACKAGE_CACHE:
 			if (info->d_uid != 0)
-				gid = multiuser_get_cache_gid(info->userid, info->d_uid);
+				gid = multiuser_get_cache_gid(info->d_uid);
 			else
 				gid = multiuser_get_uid(info->userid, uid);
 			break;
@@ -261,78 +261,48 @@ static int needs_fixup(perm_t perm) {
 	return 0;
 }
 
-void fixup_perms_recursive(struct dentry *dentry, struct limit_search *limit) {
+static void __fixup_perms_recursive(struct dentry *dentry, struct limit_search *limit, int depth)
+{
 	struct dentry *child;
 	struct sdcardfs_inode_info *info;
-	if (!dget(dentry))
-		return;
+
+	/*
+	 * All paths will terminate their recursion on hitting PERM_ANDROID_OBB,
+	 * PERM_ANDROID_MEDIA, or PERM_ANDROID_DATA. This happens at a depth of
+	 * at most 3.
+	 */
+	WARN(depth > 3, "%s: Max expected depth exceeded!\n", __func__);
+	spin_lock_nested(&dentry->d_lock, depth);
 	if (!d_inode(dentry)) {
-		dput(dentry);
+		spin_unlock(&dentry->d_lock);
 		return;
 	}
 	info = SDCARDFS_I(d_inode(dentry));
 
 	if (needs_fixup(info->perm)) {
-		spin_lock(&dentry->d_lock);
 		list_for_each_entry(child, &dentry->d_subdirs, d_child) {
-			dget(child);
-			if (!(limit->flags & BY_NAME) || !strncasecmp(child->d_name.name, limit->name, limit->length)) {
+			spin_lock_nested(&child->d_lock, depth + 1);
+			if (!(limit->flags & BY_NAME) || qstr_case_eq(&child->d_name, &limit->name)) {
 				if (d_inode(child)) {
 					get_derived_permission(dentry, child);
 					fixup_tmp_permissions(d_inode(child));
-					dput(child);
+					spin_unlock(&child->d_lock);
 					break;
 				}
 			}
-			dput(child);
+			spin_unlock(&child->d_lock);
 		}
-		spin_unlock(&dentry->d_lock);
 	} else 	if (descendant_may_need_fixup(info, limit)) {
-		spin_lock(&dentry->d_lock);
 		list_for_each_entry(child, &dentry->d_subdirs, d_child) {
-				fixup_perms_recursive(child, limit);
+				__fixup_perms_recursive(child, limit, depth + 1);
 		}
-		spin_unlock(&dentry->d_lock);
 	}
-	dput(dentry);
+	spin_unlock(&dentry->d_lock);
 }
 
-void drop_recursive(struct dentry *parent) {
-	struct dentry *dentry;
-	struct sdcardfs_inode_info *info;
-	if (!d_inode(parent))
-		return;
-	info = SDCARDFS_I(d_inode(parent));
-	spin_lock(&parent->d_lock);
-	list_for_each_entry(dentry, &parent->d_subdirs, d_child) {
-		if (d_inode(dentry)) {
-			if (SDCARDFS_I(d_inode(parent))->top != SDCARDFS_I(d_inode(dentry))->top) {
-				drop_recursive(dentry);
-				d_drop(dentry);
-			}
-		}
-	}
-	spin_unlock(&parent->d_lock);
-}
-
-void fixup_top_recursive(struct dentry *parent) {
-	struct dentry *dentry;
-	struct sdcardfs_inode_info *info;
-
-	if (!d_inode(parent))
-		return;
-	info = SDCARDFS_I(d_inode(parent));
-	spin_lock(&parent->d_lock);
-	list_for_each_entry(dentry, &parent->d_subdirs, d_child) {
-		if (d_inode(dentry)) {
-			if (SDCARDFS_I(d_inode(parent))->top != SDCARDFS_I(d_inode(dentry))->top) {
-				get_derived_permission(parent, dentry);
-				fixup_tmp_permissions(d_inode(dentry));
-				fixup_top_recursive(dentry);
-			}
-		}
-	}
-	spin_unlock(&parent->d_lock);
+void fixup_perms_recursive(struct dentry *dentry, struct limit_search *limit)
+{
+	__fixup_perms_recursive(dentry, limit, 0);
 }
 
 /* main function for updating derived permission */
@@ -387,6 +357,8 @@ int is_obbpath_invalid(struct dentry *dent)
 	struct sdcardfs_dentry_info *di = SDCARDFS_D(dent);
 	struct sdcardfs_sb_info *sbi = SDCARDFS_SB(dent->d_sb);
 	char *path_buf, *obbpath_s;
+	int need_put = 0;
+	struct path lower_path;
 
 	/* check the base obbpath has been changed.
 	 * this routine can check an uninitialized obb dentry as well.
@@ -413,10 +385,13 @@ int is_obbpath_invalid(struct dentry *dent)
 			}
 
 			//unlock_dir(lower_parent);
-			path_put(&di->lower_path);
+			pathcpy(&lower_path, &di->lower_path);
+			need_put = 1;
 		}
 	}
 	spin_unlock(&di->lock);
+	if (need_put)
+		path_put(&lower_path);
 	return ret;
 }
 
@@ -462,7 +437,6 @@ int setup_obb_dentry(struct dentry *dentry, struct path *lower_path)
 
 	if(!err) {
 		/* the obbpath base has been found */
-		printk(KERN_INFO "sdcardfs: the sbi->obbpath is found\n");
 		pathcpy(lower_path, &obbpath);
 	} else {
 		/* if the sbi->obbpath is not available, we can optionally
