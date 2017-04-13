@@ -5,7 +5,7 @@
  #EXTRA_CFLAGS       += -DBCMDBG_ASSERT
  
 -EXTRA_LDFLAGS      := $(src)/lib/wlc_hybrid.o_shipped
-+EXTRA_LDFLAGS      := $(srctree)/$(src)/lib/wlc_hybrid.o_shipped
++EXTRA_LDFLAGS      := $(srctree)/$(src)/lib$(if $(CONFIG_64BIT),64,32)/wlc_hybrid.o_shipped
  
  KBASE              ?= /lib/modules/`uname -r`
  KBUILD_DIR         ?= $(KBASE)/build
