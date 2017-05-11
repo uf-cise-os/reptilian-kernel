@@ -320,6 +320,8 @@ static DEFINE_PER_CPU(unsigned long, max_freq_scale) = SCHED_CAPACITY_SCALE;
 static void
 scale_freq_capacity(struct cpufreq_policy *policy, struct cpufreq_freqs *freqs)
 {
+	if (!policy->max || !policy->cpuinfo.max_freq)
+		return;
 	unsigned long cur = freqs ? freqs->new : policy->cur;
 	unsigned long scale = (cur << SCHED_CAPACITY_SHIFT) / policy->max;
 	struct cpufreq_cpuinfo *cpuinfo = &policy->cpuinfo;
