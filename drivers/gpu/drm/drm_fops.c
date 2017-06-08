@@ -663,6 +663,10 @@ void drm_event_cancel_free(struct drm_device *dev,
 		list_del(&p->pending_link);
 	}
 	spin_unlock_irqrestore(&dev->event_lock, flags);
+
+	if (p->fence)
+		fence_put(p->fence);
+
 	kfree(p);
 }
 EXPORT_SYMBOL(drm_event_cancel_free);
@@ -686,8 +690,8 @@ void drm_send_event_locked(struct drm_device *dev, struct drm_pending_event *e)
 	assert_spin_locked(&dev->event_lock);
 
 	if (e->completion) {
-		/* ->completion might disappear as soon as it signalled. */
 		complete_all(e->completion);
+		e->completion_release(e->completion);
 		e->completion = NULL;
 	}
 

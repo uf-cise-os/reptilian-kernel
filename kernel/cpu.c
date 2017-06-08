@@ -659,7 +659,6 @@ void __init cpuhp_threads_init(void)
 	kthread_unpark(this_cpu_read(cpuhp_state.thread));
 }
 
-#ifdef CONFIG_HOTPLUG_CPU
 EXPORT_SYMBOL(register_cpu_notifier);
 EXPORT_SYMBOL(__register_cpu_notifier);
 void unregister_cpu_notifier(struct notifier_block *nb)
@@ -676,6 +675,7 @@ void __unregister_cpu_notifier(struct notifier_block *nb)
 }
 EXPORT_SYMBOL(__unregister_cpu_notifier);
 
+#ifdef CONFIG_HOTPLUG_CPU
 /**
  * clear_tasks_mm_cpumask - Safely clear tasks' mm_cpumask for a CPU
  * @cpu: a CPU id
@@ -1154,6 +1154,7 @@ void __weak arch_enable_nonboot_cpus_end(void)
 void enable_nonboot_cpus(void)
 {
 	int cpu, error;
+	struct device *cpu_device;
 
 	/* Allow everyone to use the CPU hotplug again */
 	cpu_maps_update_begin();
@@ -1171,6 +1172,12 @@ void enable_nonboot_cpus(void)
 		trace_suspend_resume(TPS("CPU_ON"), cpu, false);
 		if (!error) {
 			pr_info("CPU%d is up\n", cpu);
+			cpu_device = get_cpu_device(cpu);
+			if (!cpu_device)
+				pr_err("%s: failed to get cpu%d device\n",
+				       __func__, cpu);
+			else
+				kobject_uevent(&cpu_device->kobj, KOBJ_ONLINE);
 			continue;
 		}
 		pr_warn("Error taking CPU%d up: %d\n", cpu, error);
@@ -1441,14 +1448,12 @@ static void cpuhp_store_callbacks(enum cpuhp_state state,
 	/* (Un)Install the callbacks for further cpu hotplug operations */
 	struct cpuhp_step *sp;
 
-	mutex_lock(&cpuhp_state_mutex);
 	sp = cpuhp_get_step(state);
 	sp->startup.single = startup;
 	sp->teardown.single = teardown;
 	sp->name = name;
 	sp->multi_instance = multi_instance;
 	INIT_HLIST_HEAD(&sp->list);
-	mutex_unlock(&cpuhp_state_mutex);
 }
 
 static void *cpuhp_get_teardown_cb(enum cpuhp_state state)
@@ -1518,16 +1523,13 @@ static int cpuhp_reserve_state(enum cpuhp_state state)
 {
 	enum cpuhp_state i;
 
-	mutex_lock(&cpuhp_state_mutex);
 	for (i = CPUHP_AP_ONLINE_DYN; i <= CPUHP_AP_ONLINE_DYN_END; i++) {
 		if (cpuhp_ap_states[i].name)
 			continue;
 
 		cpuhp_ap_states[i].name = "Reserved";
-		mutex_unlock(&cpuhp_state_mutex);
 		return i;
 	}
-	mutex_unlock(&cpuhp_state_mutex);
 	WARN(1, "No more dynamic states available for CPU hotplug\n");
 	return -ENOSPC;
 }
@@ -1544,6 +1546,7 @@ int __cpuhp_state_add_instance(enum cpuhp_state state, struct hlist_node *node,
 		return -EINVAL;
 
 	get_online_cpus();
+	mutex_lock(&cpuhp_state_mutex);
 
 	if (!invoke || !sp->startup.multi)
 		goto add_node;
@@ -1568,11 +1571,10 @@ int __cpuhp_state_add_instance(enum cpuhp_state state, struct hlist_node *node,
 	}
 add_node:
 	ret = 0;
-	mutex_lock(&cpuhp_state_mutex);
 	hlist_add_head(node, &sp->list);
-	mutex_unlock(&cpuhp_state_mutex);
 
 err:
+	mutex_unlock(&cpuhp_state_mutex);
 	put_online_cpus();
 	return ret;
 }
@@ -1601,6 +1603,7 @@ int __cpuhp_setup_state(enum cpuhp_state state,
 		return -EINVAL;
 
 	get_online_cpus();
+	mutex_lock(&cpuhp_state_mutex);
 
 	/* currently assignments for the ONLINE state are possible */
 	if (state == CPUHP_AP_ONLINE_DYN) {
@@ -1636,6 +1639,8 @@ int __cpuhp_setup_state(enum cpuhp_state state,
 		}
 	}
 out:
+	mutex_unlock(&cpuhp_state_mutex);
+
 	put_online_cpus();
 	if (!ret && dyn_state)
 		return state;
@@ -1655,6 +1660,8 @@ int __cpuhp_state_remove_instance(enum cpuhp_state state,
 		return -EINVAL;
 
 	get_online_cpus();
+	mutex_lock(&cpuhp_state_mutex);
+
 	if (!invoke || !cpuhp_get_teardown_cb(state))
 		goto remove;
 	/*
@@ -1671,7 +1678,6 @@ int __cpuhp_state_remove_instance(enum cpuhp_state state,
 	}
 
 remove:
-	mutex_lock(&cpuhp_state_mutex);
 	hlist_del(node);
 	mutex_unlock(&cpuhp_state_mutex);
 	put_online_cpus();
@@ -1696,6 +1702,7 @@ void __cpuhp_remove_state(enum cpuhp_state state, bool invoke)
 	BUG_ON(cpuhp_cb_check(state));
 
 	get_online_cpus();
+	mutex_lock(&cpuhp_state_mutex);
 
 	if (sp->multi_instance) {
 		WARN(!hlist_empty(&sp->list),
@@ -1721,6 +1728,7 @@ void __cpuhp_remove_state(enum cpuhp_state state, bool invoke)
 	}
 remove:
 	cpuhp_store_callbacks(state, NULL, NULL, NULL, false);
+	mutex_unlock(&cpuhp_state_mutex);
 	put_online_cpus();
 }
 EXPORT_SYMBOL(__cpuhp_remove_state);
@@ -1932,3 +1940,23 @@ void __init boot_cpu_state_init(void)
 {
 	per_cpu_ptr(&cpuhp_state, smp_processor_id())->state = CPUHP_ONLINE;
 }
+
+static ATOMIC_NOTIFIER_HEAD(idle_notifier);
+
+void idle_notifier_register(struct notifier_block *n)
+{
+	atomic_notifier_chain_register(&idle_notifier, n);
+}
+EXPORT_SYMBOL_GPL(idle_notifier_register);
+
+void idle_notifier_unregister(struct notifier_block *n)
+{
+	atomic_notifier_chain_unregister(&idle_notifier, n);
+}
+EXPORT_SYMBOL_GPL(idle_notifier_unregister);
+
+void idle_notifier_call_chain(unsigned long val)
+{
+	atomic_notifier_call_chain(&idle_notifier, val, NULL);
+}
+EXPORT_SYMBOL_GPL(idle_notifier_call_chain);

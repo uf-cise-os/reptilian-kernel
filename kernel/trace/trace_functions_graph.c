@@ -65,6 +65,9 @@ struct fgraph_data {
 
 #define TRACE_GRAPH_INDENT	2
 
+/* Flag options */
+#define TRACE_GRAPH_PRINT_FLAT		0x80
+
 static unsigned int max_depth;
 
 static struct tracer_opt trace_opts[] = {
@@ -88,6 +91,8 @@ static struct tracer_opt trace_opts[] = {
 	{ TRACER_OPT(sleep-time, TRACE_GRAPH_SLEEP_TIME) },
 	/* Include time within nested functions */
 	{ TRACER_OPT(graph-time, TRACE_GRAPH_GRAPH_TIME) },
+	/* Use standard trace formatting rather than hierarchical */
+	{ TRACER_OPT(funcgraph-flat, TRACE_GRAPH_PRINT_FLAT) },
 	{ } /* Empty entry */
 };
 
@@ -842,6 +847,10 @@ print_graph_entry_leaf(struct trace_iterator *iter,
 
 		cpu_data = per_cpu_ptr(data->cpu_data, cpu);
 
+		/* If a graph tracer ignored set_graph_notrace */
+		if (call->depth < -1)
+			call->depth += FTRACE_NOTRACE_DEPTH;
+
 		/*
 		 * Comments display at + 1 to depth. Since
 		 * this is a leaf function, keep the comments
@@ -850,7 +859,8 @@ print_graph_entry_leaf(struct trace_iterator *iter,
 		cpu_data->depth = call->depth - 1;
 
 		/* No need to keep this function around for this depth */
-		if (call->depth < FTRACE_RETFUNC_DEPTH)
+		if (call->depth < FTRACE_RETFUNC_DEPTH &&
+		    !WARN_ON_ONCE(call->depth < 0))
 			cpu_data->enter_funcs[call->depth] = 0;
 	}
 
@@ -880,11 +890,16 @@ print_graph_entry_nested(struct trace_iterator *iter,
 		struct fgraph_cpu_data *cpu_data;
 		int cpu = iter->cpu;
 
+		/* If a graph tracer ignored set_graph_notrace */
+		if (call->depth < -1)
+			call->depth += FTRACE_NOTRACE_DEPTH;
+
 		cpu_data = per_cpu_ptr(data->cpu_data, cpu);
 		cpu_data->depth = call->depth;
 
 		/* Save this function pointer to see if the exit matches */
-		if (call->depth < FTRACE_RETFUNC_DEPTH)
+		if (call->depth < FTRACE_RETFUNC_DEPTH &&
+		    !WARN_ON_ONCE(call->depth < 0))
 			cpu_data->enter_funcs[call->depth] = call->func;
 	}
 
@@ -1114,7 +1129,8 @@ print_graph_return(struct ftrace_graph_ret *trace, struct trace_seq *s,
 		 */
 		cpu_data->depth = trace->depth - 1;
 
-		if (trace->depth < FTRACE_RETFUNC_DEPTH) {
+		if (trace->depth < FTRACE_RETFUNC_DEPTH &&
+		    !WARN_ON_ONCE(trace->depth < 0)) {
 			if (cpu_data->enter_funcs[trace->depth] != trace->func)
 				func_match = 0;
 			cpu_data->enter_funcs[trace->depth] = 0;
@@ -1232,6 +1248,9 @@ print_graph_function_flags(struct trace_iterator *iter, u32 flags)
 	int cpu = iter->cpu;
 	int ret;
 
+	if (flags & TRACE_GRAPH_PRINT_FLAT)
+		return TRACE_TYPE_UNHANDLED;
+
 	if (data && per_cpu_ptr(data->cpu_data, cpu)->ignore) {
 		per_cpu_ptr(data->cpu_data, cpu)->ignore = 0;
 		return TRACE_TYPE_HANDLED;
@@ -1287,13 +1306,6 @@ static enum print_line_t
 print_graph_function(struct trace_iterator *iter)
 {
 	return print_graph_function_flags(iter, tracer_flags.val);
-}
-
-static enum print_line_t
-print_graph_function_event(struct trace_iterator *iter, int flags,
-			   struct trace_event *event)
-{
-	return print_graph_function(iter);
 }
 
 static void print_lat_header(struct seq_file *s, u32 flags)
@@ -1363,6 +1375,11 @@ void print_graph_headers_flags(struct seq_file *s, u32 flags)
 {
 	struct trace_iterator *iter = s->private;
 	struct trace_array *tr = iter->tr;
+
+	if (flags & TRACE_GRAPH_PRINT_FLAT) {
+		trace_default_header(s);
+		return;
+	}
 
 	if (!(tr->trace_flags & TRACE_ITER_CONTEXT_INFO))
 		return;
@@ -1445,19 +1462,6 @@ func_graph_set_flag(struct trace_array *tr, u32 old_flags, u32 bit, int set)
 	return 0;
 }
 
-static struct trace_event_functions graph_functions = {
-	.trace		= print_graph_function_event,
-};
-
-static struct trace_event graph_trace_entry_event = {
-	.type		= TRACE_GRAPH_ENT,
-	.funcs		= &graph_functions,
-};
-
-static struct trace_event graph_trace_ret_event = {
-	.type		= TRACE_GRAPH_RET,
-	.funcs		= &graph_functions
-};
 
 static struct tracer graph_trace __tracer_data = {
 	.name		= "function_graph",
@@ -1533,16 +1537,6 @@ fs_initcall(init_graph_tracefs);
 static __init int init_graph_trace(void)
 {
 	max_bytes_for_cpu = snprintf(NULL, 0, "%d", nr_cpu_ids - 1);
-
-	if (!register_trace_event(&graph_trace_entry_event)) {
-		pr_warn("Warning: could not register graph trace events\n");
-		return 1;
-	}
-
-	if (!register_trace_event(&graph_trace_ret_event)) {
-		pr_warn("Warning: could not register graph trace events\n");
-		return 1;
-	}
 
 	return register_tracer(&graph_trace);
 }
