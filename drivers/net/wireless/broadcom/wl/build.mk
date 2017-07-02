@@ -9,6 +9,7 @@ WL_PATCHES := \
 	linux-recent.patch \
 	linux-48.patch \
 	linux-411.patch \
+	linux-412.patch \
 
 $(WL_SRC):
 	@echo Downloading $(@F)...
