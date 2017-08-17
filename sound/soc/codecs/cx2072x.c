@@ -711,6 +711,8 @@ static int cx2072x_config_i2spcm(struct cx2072x_priv *cx2072x)
 	reg3.r.rx_endian_sel = !is_big_endian;
 	reg3.r.rx_dstart_dly = has_one_bit_delay;
 
+	reg4.ulval = 0;
+
 	if (is_i2s) {
 		reg2.r.tx_slot_1 = 0;
 		reg2.r.tx_slot_2 = i2s_right_slot;
