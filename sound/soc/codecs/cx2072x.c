@@ -1815,17 +1815,19 @@ static int cx2072x_set_bias_level(struct snd_soc_codec *codec,
 		break;
 
 	case SND_SOC_BIAS_OFF:
-		/*Shutdown codec completely*/
-		cx2072x_sw_reset(cx2072x);
-		regmap_write(cx2072x->regmap, CX2072X_AFG_POWER_STATE, 3);
-		regcache_mark_dirty(cx2072x->regmap);
-		regcache_cache_only(cx2072x->regmap, true);
-		cx2072x->plbk_eq_changed = true;
-		cx2072x->plbk_drc_changed = true;
-		if (cx2072x->mclk) {
-			/*delayed mclk shutdown for 200ms*/
-			mdelay(200);
-			clk_disable_unprepare(cx2072x->mclk);
+		if (old_level != SND_SOC_BIAS_OFF) {
+			/*Shutdown codec completely*/
+			cx2072x_sw_reset(cx2072x);
+			regmap_write(cx2072x->regmap, CX2072X_AFG_POWER_STATE, 3);
+			regcache_mark_dirty(cx2072x->regmap);
+			regcache_cache_only(cx2072x->regmap, true);
+			cx2072x->plbk_eq_changed = true;
+			cx2072x->plbk_drc_changed = true;
+			if (cx2072x->mclk) {
+				/*delayed mclk shutdown for 200ms*/
+				mdelay(200);
+				clk_disable_unprepare(cx2072x->mclk);
+			}
 		}
 		break;
 	}
