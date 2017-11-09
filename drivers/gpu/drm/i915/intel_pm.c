@@ -56,6 +56,9 @@
 #define INTEL_RC6p_ENABLE			(1<<1)
 #define INTEL_RC6pp_ENABLE			(1<<2)
 
+#define VLV_RP_UP_EI_THRESHOLD			90
+#define VLV_RP_DOWN_EI_THRESHOLD		70
+
 static void gen9_init_clock_gating(struct drm_i915_private *dev_priv)
 {
 	/* See Bspec note for PSR2_CTL bit 31, Wa#828:skl,bxt,kbl,cfl */
@@ -5966,8 +5969,11 @@ static void gen6_set_rps_thresholds(struct drm_i915_private *dev_priv, u8 val)
 	/* When byt can survive without system hang with dynamic
 	 * sw freq adjustments, this restriction can be lifted.
 	 */
-	if (IS_VALLEYVIEW(dev_priv))
+	if (IS_VALLEYVIEW(dev_priv)) {
+		threshold_up = VLV_RP_UP_EI_THRESHOLD;
+		threshold_down = VLV_RP_DOWN_EI_THRESHOLD;
 		goto skip_hw_write;
+	}
 
 	I915_WRITE(GEN6_RP_UP_EI,
 		   GT_INTERVAL_FROM_US(dev_priv, ei_up));
