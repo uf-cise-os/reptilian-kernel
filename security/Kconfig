@@ -18,6 +18,15 @@ config SECURITY_DMESG_RESTRICT
 
 	  If you are unsure how to answer this question, answer N.
 
+config SECURITY_PERF_EVENTS_RESTRICT
+	bool "Restrict unprivileged use of performance events"
+	depends on PERF_EVENTS
+	help
+	  If you say Y here, the kernel.perf_event_paranoid sysctl
+	  will be set to 3 by default, and no unprivileged use of the
+	  perf_event_open syscall will be permitted unless it is
+	  changed.
+
 config SECURITY
 	bool "Enable different security models"
 	depends on SYSFS
@@ -53,6 +62,17 @@ config SECURITY_NETWORK
 	  If enabled, a security module can use these hooks to
 	  implement socket and networking access controls.
 	  If you are unsure how to answer this question, answer N.
+
+config PAGE_TABLE_ISOLATION
+	bool "Remove the kernel mapping in user mode"
+	depends on X86_64 && !UML
+	default y
+	help
+	  This feature reduces the number of hardware side channels by
+	  ensuring that the majority of kernel addresses are not mapped
+	  into userspace.
+
+	  See Documentation/x86/pagetable-isolation.txt for more details.
 
 config SECURITY_INFINIBAND
 	bool "Infiniband Security Hooks"

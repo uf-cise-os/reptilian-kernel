@@ -31,6 +31,10 @@
 #include <linux/binfmts.h>
 #include <linux/personality.h>
 
+#ifdef CONFIG_ANDROID_PARANOID_NETWORK
+#include <linux/android_aid.h>
+#endif
+
 /*
  * If a non-root user executes a setuid-root binary in
  * !secure(SECURE_NOROOT) mode, then we raise capabilities.
@@ -54,7 +58,7 @@ static void warn_setuid_and_fcaps_mixed(const char *fname)
 }
 
 /**
- * cap_capable - Determine whether a task has a particular effective capability
+ * __cap_capable - Determine whether a task has a particular effective capability
  * @cred: The credentials to use
  * @ns:  The user namespace in which we need the capability
  * @cap: The capability to check for
@@ -68,7 +72,7 @@ static void warn_setuid_and_fcaps_mixed(const char *fname)
  * cap_has_capability() returns 0 when a task has a capability, but the
  * kernel's capable() and has_capability() returns 1 for this case.
  */
-int cap_capable(const struct cred *cred, struct user_namespace *targ_ns,
+int __cap_capable(const struct cred *cred, struct user_namespace *targ_ns,
 		int cap, int audit)
 {
 	struct user_namespace *ns = targ_ns;
@@ -106,6 +110,27 @@ int cap_capable(const struct cred *cred, struct user_namespace *targ_ns,
 	/* We never get here */
 }
 
+int cap_capable(const struct cred *cred, struct user_namespace *targ_ns,
+		int cap, int audit)
+{
+	int ret = __cap_capable(cred, targ_ns, cap, audit);
+
+#ifdef CONFIG_ANDROID_PARANOID_NETWORK
+	if (ret != 0 && cap == CAP_NET_RAW && in_egroup_p(AID_NET_RAW)) {
+		printk("Process %s granted CAP_NET_RAW from Android group net_raw.\n", current->comm);
+		printk("  Please update the .rc file to explictly set 'capabilities NET_RAW'\n");
+		printk("  Implicit grants are deprecated and will be removed in the future.\n");
+		return 0;
+	}
+	if (ret != 0 && cap == CAP_NET_ADMIN && in_egroup_p(AID_NET_ADMIN)) {
+		printk("Process %s granted CAP_NET_ADMIN from Android group net_admin.\n", current->comm);
+		printk("  Please update the .rc file to explictly set 'capabilities NET_ADMIN'\n");
+		printk("  Implicit grants are deprecated and will be removed in the future.\n");
+		return 0;
+	}
+#endif
+	return ret;
+}
 /**
  * cap_settime - Determine whether the current process may set the system clock
  * @ts: The time to set
@@ -348,21 +373,18 @@ static __u32 sansflags(__u32 m)
 	return m & ~VFS_CAP_FLAGS_EFFECTIVE;
 }
 
-static bool is_v2header(size_t size, __le32 magic)
+static bool is_v2header(size_t size, const struct vfs_cap_data *cap)
 {
-	__u32 m = le32_to_cpu(magic);
 	if (size != XATTR_CAPS_SZ_2)
 		return false;
-	return sansflags(m) == VFS_CAP_REVISION_2;
+	return sansflags(le32_to_cpu(cap->magic_etc)) == VFS_CAP_REVISION_2;
 }
 
-static bool is_v3header(size_t size, __le32 magic)
+static bool is_v3header(size_t size, const struct vfs_cap_data *cap)
 {
-	__u32 m = le32_to_cpu(magic);
-
 	if (size != XATTR_CAPS_SZ_3)
 		return false;
-	return sansflags(m) == VFS_CAP_REVISION_3;
+	return sansflags(le32_to_cpu(cap->magic_etc)) == VFS_CAP_REVISION_3;
 }
 
 /*
@@ -405,7 +427,7 @@ int cap_inode_getsecurity(struct inode *inode, const char *name, void **buffer,
 
 	fs_ns = inode->i_sb->s_user_ns;
 	cap = (struct vfs_cap_data *) tmpbuf;
-	if (is_v2header((size_t) ret, cap->magic_etc)) {
+	if (is_v2header((size_t) ret, cap)) {
 		/* If this is sizeof(vfs_cap_data) then we're ok with the
 		 * on-disk value, so return that.  */
 		if (alloc)
@@ -413,7 +435,7 @@ int cap_inode_getsecurity(struct inode *inode, const char *name, void **buffer,
 		else
 			kfree(tmpbuf);
 		return ret;
-	} else if (!is_v3header((size_t) ret, cap->magic_etc)) {
+	} else if (!is_v3header((size_t) ret, cap)) {
 		kfree(tmpbuf);
 		return -EINVAL;
 	}
@@ -470,9 +492,9 @@ static kuid_t rootid_from_xattr(const void *value, size_t size,
 	return make_kuid(task_ns, rootid);
 }
 
-static bool validheader(size_t size, __le32 magic)
+static bool validheader(size_t size, const struct vfs_cap_data *cap)
 {
-	return is_v2header(size, magic) || is_v3header(size, magic);
+	return is_v2header(size, cap) || is_v3header(size, cap);
 }
 
 /*
@@ -495,7 +517,7 @@ int cap_convert_nscap(struct dentry *dentry, void **ivalue, size_t size)
 
 	if (!*ivalue)
 		return -EINVAL;
-	if (!validheader(size, cap->magic_etc))
+	if (!validheader(size, cap))
 		return -EINVAL;
 	if (!capable_wrt_inode_uidgid(inode, CAP_SETFCAP))
 		return -EPERM;

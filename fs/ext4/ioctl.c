@@ -291,10 +291,20 @@ flags_err:
 	if (err)
 		goto flags_out;
 
-	if ((jflag ^ oldflags) & (EXT4_JOURNAL_DATA_FL))
+	if ((jflag ^ oldflags) & (EXT4_JOURNAL_DATA_FL)) {
+		/*
+		 * Changes to the journaling mode can cause unsafe changes to
+		 * S_DAX if we are using the DAX mount option.
+		 */
+		if (test_opt(inode->i_sb, DAX)) {
+			err = -EBUSY;
+			goto flags_out;
+		}
+
 		err = ext4_change_inode_journal_flag(inode, jflag);
-	if (err)
-		goto flags_out;
+		if (err)
+			goto flags_out;
+	}
 	if (migrate) {
 		if (flags & EXT4_EXTENTS_FL)
 			err = ext4_ext_migrate(inode);
@@ -900,16 +910,21 @@ resizefs_out:
 		return err;
 	}
 
+	case FIDTRIM:
 	case FITRIM:
 	{
 		struct request_queue *q = bdev_get_queue(sb->s_bdev);
 		struct fstrim_range range;
 		int ret = 0;
+		int flags  = cmd == FIDTRIM ? BLKDEV_DISCARD_SECURE : 0;
 
 		if (!capable(CAP_SYS_ADMIN))
 			return -EPERM;
 
 		if (!blk_queue_discard(q))
+			return -EOPNOTSUPP;
+
+		if ((flags & BLKDEV_DISCARD_SECURE) && !blk_queue_secure_erase(q))
 			return -EOPNOTSUPP;
 
 		if (copy_from_user(&range, (struct fstrim_range __user *)arg,
@@ -918,7 +933,7 @@ resizefs_out:
 
 		range.minlen = max((unsigned int)range.minlen,
 				   q->limits.discard_granularity);
-		ret = ext4_trim_fs(sb, &range);
+		ret = ext4_trim_fs(sb, &range, flags);
 		if (ret < 0)
 			return ret;
 
