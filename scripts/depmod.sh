@@ -11,7 +11,7 @@ KERNELRELEASE=$2
 SYMBOL_PREFIX=$3
 
 if ! test -r System.map -a -x "$DEPMOD"; then
-	exit 0
+	exit -1
 fi
 
 # older versions of depmod don't support -P <symbol-prefix>
