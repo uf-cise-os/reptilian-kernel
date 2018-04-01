@@ -29,9 +29,9 @@
 #include <sound/pcm_params.h>
 #include <sound/soc.h>
 #include <sound/jack.h>
+#include <sound/soc-acpi.h>
 #include "../../codecs/cx2072x.h"
 #include "../atom/sst-atom-controls.h"
-#include "../common/sst-acpi.h"
 
 static const struct snd_soc_dapm_widget cht_dapm_widgets[] = {
 	SND_SOC_DAPM_HP("Headphone", NULL),
@@ -289,12 +289,12 @@ static int snd_cht_mc_probe(struct platform_device *pdev)
 {
 	int i;
 	int dai_index;
-	struct sst_acpi_mach *mach;
+	struct snd_soc_acpi_mach *mach = pdev->dev.platform_data;
 	const char *i2c_name = NULL;
 
 	/* register the soc card */
-	chtcx2072x_card.dev = &pdev->dev;
-	mach = chtcx2072x_card.dev->platform_data;
+	// chtcx2072x_card.dev = &pdev->dev;
+	// mach = chtcx2072x_card.dev->platform_data;
 
 	/* fix index of codec dai */
 	dai_index = MERR_DPCM_COMPR + 1;
@@ -306,8 +306,8 @@ static int snd_cht_mc_probe(struct platform_device *pdev)
 	}
 
 	/* fixup codec name based on HID */
-	i2c_name = sst_acpi_find_name_from_hid(mach->id);
-	if (i2c_name != NULL) {
+	i2c_name = acpi_dev_get_first_match_name(mach->id, NULL, -1);
+	if (i2c_name) {
 		snprintf(cht_cx_codec_name, sizeof(cht_cx_codec_name),
 			"%s%s", "i2c-", i2c_name);
 		cht_dailink[dai_index].codec_name = cht_cx_codec_name;
