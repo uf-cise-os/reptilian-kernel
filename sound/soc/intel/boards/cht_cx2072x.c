@@ -313,6 +313,7 @@ static int snd_cht_mc_probe(struct platform_device *pdev)
 		cht_dailink[dai_index].codec_name = cht_cx_codec_name;
 	}
 
+	chtcx2072x_card.dev = &pdev->dev;
 	return devm_snd_soc_register_card(&pdev->dev, &chtcx2072x_card);
 }
 
