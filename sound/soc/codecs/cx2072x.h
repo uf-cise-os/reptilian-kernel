@@ -187,8 +187,8 @@ enum cx2072x_jack_types {
 	CX_JACK_NOKIE_HEADSET = 0x0003,
 };
 
-int cx2072x_enable_detect(struct snd_soc_codec *codec);
-int cx2072x_get_jack_state(struct snd_soc_codec *codec);
+int cx2072x_enable_detect(struct snd_soc_component *component);
+int cx2072x_get_jack_state(struct snd_soc_component *component);
 
 enum REG_SAMPLE_SIZE {
 	SAMPLE_SIZE_8_BITS = 0,

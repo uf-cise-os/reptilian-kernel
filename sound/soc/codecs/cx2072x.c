@@ -52,7 +52,7 @@ struct cx2072x_priv {
 	struct clk *mclk;
 	unsigned int mclk_rate;
 	struct device *dev;
-	struct snd_soc_codec *codec;
+	struct snd_soc_component *component;
 	struct snd_soc_dai_driver *dai_drv;
 	int is_biason;
 	struct snd_soc_jack *jack;
@@ -391,10 +391,10 @@ static int cx2072x_reg_write(void *context, unsigned int reg,
 	return ret;
 }
 
-static int cx2072x_reg_bulk_write(struct snd_soc_codec *codec, unsigned int reg,
+static int cx2072x_reg_bulk_write(struct snd_soc_component *component, unsigned int reg,
 				  const void *val, size_t val_count)
 {
-	struct i2c_client *client = to_i2c_client(codec->dev);
+	struct i2c_client *client = to_i2c_client(component->dev);
 	u8 buf[2 + MAX_EQ_COEFF];
 	int ret;
 	struct device *dev = &client->dev;
@@ -766,9 +766,9 @@ static int cx2072x_config_i2spcm(struct cx2072x_priv *cx2072x)
 	return 0;
 }
 
-static void cx2072x_update_eq_coeff(struct snd_soc_codec *codec)
+static void cx2072x_update_eq_coeff(struct snd_soc_component *component)
 {
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 	int band, ch, value;
 
 	if (!cx2072x->plbk_eq_changed)
@@ -781,7 +781,7 @@ static void cx2072x_update_eq_coeff(struct snd_soc_codec *codec)
 
 	for (ch = 0; ch < 2; ch++)
 		for (band = 0; band < CX2072X_PLBK_EQ_BAND_NUM; band++) {
-			cx2072x_reg_bulk_write(codec, CX2072X_EQ_B0_COEFF,
+			cx2072x_reg_bulk_write(component, CX2072X_EQ_B0_COEFF,
 					       &cx2072x->plbk_eq[ch][band][0],
 					       MAX_EQ_COEFF);
 			value = band + (ch << 3) + (1 << 6);
@@ -793,9 +793,9 @@ static void cx2072x_update_eq_coeff(struct snd_soc_codec *codec)
 	cx2072x->plbk_eq_en_changed = true;
 }
 
-static void cx2072x_update_eq_en(struct snd_soc_codec *codec)
+static void cx2072x_update_eq_en(struct snd_soc_component *component)
 {
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 
 	if (cx2072x->plbk_eq_en_changed) {
 		if (cx2072x->plbk_eq_en)
@@ -809,21 +809,21 @@ static void cx2072x_update_eq_en(struct snd_soc_codec *codec)
 	}
 }
 
-static void cx2072x_update_drc(struct snd_soc_codec *codec)
+static void cx2072x_update_drc(struct snd_soc_component *component)
 {
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 
 	if (cx2072x->plbk_drc_changed && cx2072x->plbk_drc_en) {
-		cx2072x_reg_bulk_write(codec, CX2072X_SPKR_DRC_ENABLE_STEP,
+		cx2072x_reg_bulk_write(component, CX2072X_SPKR_DRC_ENABLE_STEP,
 				       cx2072x->plbk_drc, MAX_DRC_REGS);
 		cx2072x->plbk_drc_changed = false;
 		cx2072x->plbk_drc_en_changed = true;
 	}
 }
 
-static void cx2072x_update_drc_en(struct snd_soc_codec *codec)
+static void cx2072x_update_drc_en(struct snd_soc_component *component)
 {
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 	u8 drc_status = cx2072x->plbk_drc[0];
 
 	if (!cx2072x->plbk_drc_en_changed)
@@ -844,10 +844,10 @@ static void cx2072x_update_drc_en(struct snd_soc_codec *codec)
 	cx2072x->plbk_drc_en_changed = false;
 }
 
-static void cx2072x_update_dsp(struct snd_soc_codec *codec)
+static void cx2072x_update_dsp(struct snd_soc_component *component)
 {
 	unsigned int afg_reg;
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 
 	regmap_read(cx2072x->regmap, CX2072X_AFG_POWER_STATE, &afg_reg);
 
@@ -858,22 +858,22 @@ static void cx2072x_update_dsp(struct snd_soc_codec *codec)
 	regmap_read(cx2072x->regmap, CX2072X_PORTG_POWER_STATE, &afg_reg);
 
 	if ((afg_reg & 0xf) != 0) {
-		dev_dbg(codec->dev, "failed to update dsp dueo portg is off\n");
+		dev_dbg(component->dev, "failed to update dsp dueo portg is off\n");
 		/*skip since device is on D3 mode*/
 		return;
 	}
 
-	cx2072x_update_eq_coeff(codec);
-	cx2072x_update_eq_en(codec);
-	cx2072x_update_drc(codec);
-	cx2072x_update_drc_en(codec);
+	cx2072x_update_eq_coeff(component);
+	cx2072x_update_eq_en(component);
+	cx2072x_update_drc(component);
+	cx2072x_update_drc_en(component);
 }
 
 static int afg_power_ev(struct snd_soc_dapm_widget *w,
 			struct snd_kcontrol *kcontrol, int event)
 {
-	struct snd_soc_codec *codec = snd_soc_dapm_to_codec(w->dapm);
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *component = snd_soc_dapm_to_component(w->dapm);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
@@ -893,12 +893,12 @@ static int afg_power_ev(struct snd_soc_dapm_widget *w,
 static int portg_power_ev(struct snd_soc_dapm_widget *w,
 			  struct snd_kcontrol *kcontrol, int event)
 {
-	struct snd_soc_codec *codec = snd_soc_dapm_to_codec(w->dapm);
+	struct snd_soc_component *component = snd_soc_dapm_to_component(w->dapm);
 
 	switch (event) {
 	case SND_SOC_DAPM_POST_PMU:
-		dev_dbg(codec->dev, "portg_power_event\n");
-		cx2072x_update_dsp(codec);
+		dev_dbg(component->dev, "portg_power_event\n");
+		cx2072x_update_dsp(component);
 		break;
 
 	default:
@@ -922,8 +922,8 @@ static int cx2072x_plbk_eq_en_info(struct snd_kcontrol *kcontrol,
 static int cx2072x_plbk_eq_en_get(struct snd_kcontrol *kcontrol,
 				  struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *component = snd_soc_kcontrol_component(kcontrol);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 
 	ucontrol->value.integer.value[0] = cx2072x->plbk_eq_en;
 
@@ -933,8 +933,8 @@ static int cx2072x_plbk_eq_en_get(struct snd_kcontrol *kcontrol,
 static int cx2072x_plbk_eq_en_put(struct snd_kcontrol *kcontrol,
 				  struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *component = snd_soc_kcontrol_component(kcontrol);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 	const bool enable = ucontrol->value.integer.value[0];
 
 	if (ucontrol->value.integer.value[0] > 1)
@@ -943,7 +943,7 @@ static int cx2072x_plbk_eq_en_put(struct snd_kcontrol *kcontrol,
 	if (cx2072x->plbk_eq_en != enable) {
 		cx2072x->plbk_eq_en = enable;
 		cx2072x->plbk_eq_en_changed = true;
-		cx2072x_update_dsp(codec);
+		cx2072x_update_dsp(component);
 	}
 
 	return 0;
@@ -963,8 +963,8 @@ static int cx2072x_plbk_drc_en_info(struct snd_kcontrol *kcontrol,
 static int cx2072x_plbk_drc_en_get(struct snd_kcontrol *kcontrol,
 				   struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *component = snd_soc_kcontrol_component(kcontrol);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 
 	ucontrol->value.integer.value[0] = cx2072x->plbk_drc_en;
 
@@ -974,8 +974,8 @@ static int cx2072x_plbk_drc_en_get(struct snd_kcontrol *kcontrol,
 static int cx2072x_plbk_drc_en_put(struct snd_kcontrol *kcontrol,
 				   struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *component = snd_soc_kcontrol_component(kcontrol);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 	const bool enable = ucontrol->value.integer.value[0];
 
 	if (ucontrol->value.integer.value[0] > 1)
@@ -984,7 +984,7 @@ static int cx2072x_plbk_drc_en_put(struct snd_kcontrol *kcontrol,
 	if (cx2072x->plbk_drc_en != enable) {
 		cx2072x->plbk_drc_en = enable;
 		cx2072x->plbk_drc_en_changed = true;
-		cx2072x_update_dsp(codec);
+		cx2072x_update_dsp(component);
 	}
 
 	return 0;
@@ -1002,8 +1002,8 @@ static int cx2072x_plbk_eq_info(struct snd_kcontrol *kcontrol,
 static int cx2072x_plbk_eq_get(struct snd_kcontrol *kcontrol,
 			       struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *component = snd_soc_kcontrol_component(kcontrol);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 	struct CX2072X_EQ_CTRL *eq =
 		(struct CX2072X_EQ_CTRL *)kcontrol->private_value;
 	u8 *param = ucontrol->value.bytes.data;
@@ -1017,8 +1017,8 @@ static int cx2072x_plbk_eq_get(struct snd_kcontrol *kcontrol,
 static int cx2072x_plbk_eq_put(struct snd_kcontrol *kcontrol,
 			       struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *component = snd_soc_kcontrol_component(kcontrol);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 	struct CX2072X_EQ_CTRL *eq =
 		(struct CX2072X_EQ_CTRL *)kcontrol->private_value;
 	u8 *param = ucontrol->value.bytes.data;
@@ -1035,7 +1035,7 @@ static int cx2072x_plbk_eq_put(struct snd_kcontrol *kcontrol,
 	cx2072x->plbk_eq_changed = true;
 	cx2072x->plbk_eq_channel = eq->ch;
 
-	cx2072x_update_dsp(codec);
+	cx2072x_update_dsp(component);
 EXIT:
 	mutex_unlock(&cx2072x->eq_coeff_lock);
 	return 0;
@@ -1053,8 +1053,8 @@ static int cx2072x_classd_level_info(struct snd_kcontrol *kcontrol,
 static int cx2072x_classd_level_get(struct snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *component = snd_soc_kcontrol_component(kcontrol);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 	u8 *param = ucontrol->value.bytes.data;
 	u8 *cache = cx2072x->classd_amp;
 
@@ -1066,19 +1066,19 @@ static int cx2072x_classd_level_get(struct snd_kcontrol *kcontrol,
 static int cx2072x_classd_level_put(struct snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *component = snd_soc_kcontrol_component(kcontrol);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 	u8 *param = ucontrol->value.bytes.data;
 	u8 *cache = cx2072x->classd_amp;
 
 	memcpy(cache, param, CX2072X_CLASSD_AMP_LEN);
 
 	/* Config Power Averaging */
-	cx2072x_reg_bulk_write(codec, CX2072X_ANALOG_TEST10,
+	cx2072x_reg_bulk_write(component, CX2072X_ANALOG_TEST10,
 			       &cx2072x->classd_amp[0], 2);
-	cx2072x_reg_bulk_write(codec, CX2072X_CODEC_TEST20,
+	cx2072x_reg_bulk_write(component, CX2072X_CODEC_TEST20,
 			       &cx2072x->classd_amp[2], 2);
-	cx2072x_reg_bulk_write(codec, CX2072X_CODEC_TEST26,
+	cx2072x_reg_bulk_write(component, CX2072X_CODEC_TEST26,
 			       &cx2072x->classd_amp[4], 2);
 	return 0;
 }
@@ -1095,8 +1095,8 @@ static int cx2072x_plbk_drc_info(struct snd_kcontrol *kcontrol,
 static int cx2072x_plbk_drc_get(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *component = snd_soc_kcontrol_component(kcontrol);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 	u8 *param = ucontrol->value.bytes.data;
 	u8 *cache = cx2072x->plbk_drc;
 
@@ -1108,15 +1108,15 @@ static int cx2072x_plbk_drc_get(struct snd_kcontrol *kcontrol,
 static int cx2072x_plbk_drc_put(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_value *ucontrol)
 {
-	struct snd_soc_codec *codec = snd_soc_kcontrol_codec(kcontrol);
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *component = snd_soc_kcontrol_component(kcontrol);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 	u8 *param = ucontrol->value.bytes.data;
 	u8 *cache = cx2072x->plbk_drc;
 
 	memcpy(cache, param, CX2072X_PLBK_DRC_PARM_LEN);
 
 	cx2072x->plbk_drc_changed = true;
-	cx2072x_update_dsp(codec);
+	cx2072x_update_dsp(component);
 
 	return 0;
 }
@@ -1200,13 +1200,13 @@ static const struct snd_kcontrol_new cx2072x_snd_controls[] = {
 
 /**
  * cx2072x_enable_detect - Enable CX2072X jack detection
- * @codec : pointer variable to codec having information related to codec
+ * @component : pointer variable to component having information related to codec
  *
  */
-int cx2072x_enable_detect(struct snd_soc_codec *codec)
+int cx2072x_enable_detect(struct snd_soc_component *component)
 {
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
-	struct snd_soc_dapm_context *dapm = snd_soc_codec_get_dapm(codec);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
+	struct snd_soc_dapm_context *dapm = snd_soc_component_get_dapm(component);
 
 	/*No-sticky input type*/
 	regmap_write(cx2072x->regmap, CX2072X_GPIO_STICKY_MASK, 0x1f);
@@ -1239,17 +1239,17 @@ EXPORT_SYMBOL_GPL(cx2072x_enable_detect);
 
 /*
  * cx2072x_get_jack_state: Return current jack state.
- * @codec : pointer variable to codec having information related to codec
+ * @component : pointer variable to component having information related to codec
  *
  */
-int cx2072x_get_jack_state(struct snd_soc_codec *codec)
+int cx2072x_get_jack_state(struct snd_soc_component *component)
 {
 	unsigned int jack;
 	unsigned int type = 0;
 	int  state = 0;
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 	bool need_cache_bypass =
-		snd_soc_codec_get_bias_level(codec) == SND_SOC_BIAS_OFF;
+		snd_soc_component_get_bias_level(component) == SND_SOC_BIAS_OFF;
 
 	if (need_cache_bypass)
 		regcache_cache_only(cx2072x->regmap, false);
@@ -1279,7 +1279,7 @@ int cx2072x_get_jack_state(struct snd_soc_codec *codec)
 	/* clear interrupt */
 	regmap_write(cx2072x->regmap, CX2072X_UM_INTERRUPT_CRTL_E, 0x12 << 24);
 
-	dev_dbg(codec->dev, "CX2072X_HSDETECT type=0x%X,Jack state = %x\n",
+	dev_dbg(component->dev, "CX2072X_HSDETECT type=0x%X,Jack state = %x\n",
 		type, state);
 	return state;
 }
@@ -1289,9 +1289,9 @@ static int cx2072x_hw_params(struct snd_pcm_substream *substream,
 			     struct snd_pcm_hw_params *params,
 			     struct snd_soc_dai *dai)
 {
-	struct snd_soc_codec *codec = dai->codec;
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
-	struct device *dev = codec->dev;
+	struct snd_soc_component *component = dai->component;
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
+	struct device *dev = component->dev;
 	const unsigned int sample_rate = params_rate(params);
 	int sample_size, frame_size;
 
@@ -1357,10 +1357,10 @@ static int cx2072x_hw_params(struct snd_pcm_substream *substream,
 static void cx2072x_shutdown(struct snd_pcm_substream *substream,
 			     struct snd_soc_dai *dai)
 {
-	struct snd_soc_codec *codec = dai->codec;
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *component = dai->component;
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 
-	/* shutdown codec. */
+	/* shutdown component. */
 	regcache_cache_only(cx2072x->regmap, false);
 	regmap_write(cx2072x->regmap, CX2072X_PORTA_POWER_STATE, 3);
 	regmap_write(cx2072x->regmap, CX2072X_PORTB_POWER_STATE, 3);
@@ -1374,14 +1374,14 @@ static void cx2072x_shutdown(struct snd_pcm_substream *substream,
 	regmap_write(cx2072x->regmap, CX2072X_DAC1_POWER_STATE, 3);
 	regmap_write(cx2072x->regmap, CX2072X_DAC2_POWER_STATE, 3);
 
-	snd_soc_codec_force_bias_level(codec, SND_SOC_BIAS_OFF);
+	snd_soc_component_force_bias_level(component, SND_SOC_BIAS_OFF);
 }
 
 static int cx2072x_set_dai_bclk_ratio(struct snd_soc_dai *dai,
 				      unsigned int ratio)
 {
-	struct snd_soc_codec *codec = dai->codec;
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *component = dai->component;
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 
 	cx2072x->bclk_ratio = ratio;
 
@@ -1391,11 +1391,11 @@ static int cx2072x_set_dai_bclk_ratio(struct snd_soc_dai *dai,
 static int cx2072x_set_dai_sysclk(struct snd_soc_dai *dai, int clk_id,
 				  unsigned int freq, int dir)
 {
-	struct snd_soc_codec *codec = dai->codec;
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct snd_soc_component *component = dai->component;
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 
 	if (cx2072x->mclk && clk_set_rate(cx2072x->mclk, freq)) {
-		dev_err(codec->dev, "set clk rate failed\n");
+		dev_err(component->dev, "set clk rate failed\n");
 		return -EINVAL;
 	}
 
@@ -1406,9 +1406,9 @@ static int cx2072x_set_dai_sysclk(struct snd_soc_dai *dai, int clk_id,
 
 static int cx2072x_set_dai_fmt(struct snd_soc_dai *dai, unsigned int fmt)
 {
-	struct snd_soc_codec *codec = dai->codec;
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
-	struct device *dev = codec->dev;
+	struct snd_soc_component *component = dai->component;
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
+	struct device *dev = component->dev;
 
 	dev_dbg(dev, "set_dai_fmt- %08x\n", fmt);
 	/* set master/slave */
@@ -1755,10 +1755,10 @@ static void cx2072x_sw_reset(struct cx2072x_priv *cx2072x)
 	regmap_write(cx2072x->regmap, CX2072X_AFG_FUNCTION_RESET, 0x01);
 }
 
-static int cx2072x_init(struct snd_soc_codec *codec)
+static int cx2072x_init(struct snd_soc_component *component)
 {
 	int ch, band;
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 
 	regmap_write(cx2072x->regmap, CX2072X_AFG_POWER_STATE, 0);
 
@@ -1782,12 +1782,12 @@ static int cx2072x_init(struct snd_soc_codec *codec)
 	return 0;
 }
 
-static int cx2072x_set_bias_level(struct snd_soc_codec *codec,
+static int cx2072x_set_bias_level(struct snd_soc_component *component,
 				  enum snd_soc_bias_level level)
 {
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 	const enum snd_soc_bias_level old_level =
-		 snd_soc_codec_get_bias_level(codec);
+		 snd_soc_component_get_bias_level(component);
 	int ret;
 
 	switch (level) {
@@ -1816,7 +1816,7 @@ static int cx2072x_set_bias_level(struct snd_soc_codec *codec,
 
 	case SND_SOC_BIAS_OFF:
 		if (old_level != SND_SOC_BIAS_OFF) {
-			/*Shutdown codec completely*/
+			/*Shutdown component completely*/
 			cx2072x_sw_reset(cx2072x);
 			regmap_write(cx2072x->regmap, CX2072X_AFG_POWER_STATE, 3);
 			regcache_mark_dirty(cx2072x->regmap);
@@ -1835,46 +1835,45 @@ static int cx2072x_set_bias_level(struct snd_soc_codec *codec,
 	return 0;
 }
 
-static int cx2072x_probe(struct snd_soc_codec *codec)
+static int cx2072x_probe(struct snd_soc_component *component)
 {
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(codec);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(component);
 	int ret = 0;
 	unsigned int ven_id;
 
-	cx2072x->codec = codec;
-	codec->control_data = cx2072x->regmap;
+	cx2072x->component = component;
 
 	regmap_read(cx2072x->regmap, CX2072X_VENDOR_ID, &ven_id);
 	regmap_read(cx2072x->regmap, CX2072X_REVISION_ID, &cx2072x->rev_id);
 
-	dev_info(codec->dev, "codec version: %08x,%08x\n",
+	dev_info(component->dev, "codec version: %08x,%08x\n",
 		 ven_id, cx2072x->rev_id);
 
 	/* Check if MCLK is specified, if not the clock is control by machine
 	 * driver
 	 */
-	cx2072x->mclk = devm_clk_get(codec->dev, "mclk");
+	cx2072x->mclk = devm_clk_get(component->dev, "mclk");
 	if (IS_ERR(cx2072x->mclk)) {
 		ret = PTR_ERR(cx2072x->mclk);
 		if (ret == -ENOENT) {
 			if (IS_ERR(cx2072x->mclk)) {
-				dev_warn(codec->dev, "Assuming static MCLK\n");
+				dev_warn(component->dev, "Assuming static MCLK\n");
 				cx2072x->mclk = NULL;
 				ret = 0;
 			}
 		} else {
-			dev_err(codec->dev, "Failed to get MCLK: %d\n", ret);
+			dev_err(component->dev, "Failed to get MCLK: %d\n", ret);
 			return ret;
 		}
 	}
 
-	dev_dbg(codec->dev, "Initialize codec\n");
+	dev_dbg(component->dev, "Initialize codec\n");
 
 	/* enable clock for codec access*/
 	if (cx2072x->mclk)
 		ret = clk_prepare_enable(cx2072x->mclk);
 
-	cx2072x_init(codec);
+	cx2072x_init(component);
 
 	ret = regmap_register_patch(cx2072x->regmap, cx2072x_patch,
 				    ARRAY_SIZE(cx2072x_patch));
@@ -1890,10 +1889,10 @@ static int cx2072x_probe(struct snd_soc_codec *codec)
 	return ret;
 }
 
-static int cx2072x_remove(struct snd_soc_codec *codec)
+static void cx2072x_remove(struct snd_soc_component *component)
 {
 	/*power off device*/
-	snd_soc_codec_force_bias_level(codec, SND_SOC_BIAS_OFF);
+	snd_soc_component_force_bias_level(component, SND_SOC_BIAS_OFF);
 
 	return 0;
 }
@@ -2070,18 +2069,16 @@ static bool cx2072x_volatile_register(struct device *dev, unsigned int reg)
 	}
 }
 
-static struct snd_soc_codec_driver soc_codec_driver_cx2072x = {
+static struct snd_soc_component_driver soc_codec_driver_cx2072x = {
 	.probe = cx2072x_probe,
 	.remove = cx2072x_remove,
 	.set_bias_level = cx2072x_set_bias_level,
-	.component_driver = {
-		.controls = cx2072x_snd_controls,
-		.num_controls = ARRAY_SIZE(cx2072x_snd_controls),
-		.dapm_widgets = cx2072x_dapm_widgets,
-		.num_dapm_widgets = ARRAY_SIZE(cx2072x_dapm_widgets),
-		.dapm_routes = cx2072x_intercon,
-		.num_dapm_routes = ARRAY_SIZE(cx2072x_intercon),
-	},
+	.controls = cx2072x_snd_controls,
+	.num_controls = ARRAY_SIZE(cx2072x_snd_controls),
+	.dapm_widgets = cx2072x_dapm_widgets,
+	.num_dapm_widgets = ARRAY_SIZE(cx2072x_dapm_widgets),
+	.dapm_routes = cx2072x_intercon,
+	.num_dapm_routes = ARRAY_SIZE(cx2072x_intercon),
 };
 
 /*
@@ -2097,7 +2094,7 @@ static struct snd_soc_dai_ops cx2072x_dai_ops = {
 
 static int cx2072x_dsp_dai_probe(struct snd_soc_dai *dai)
 {
-	struct cx2072x_priv *cx2072x = snd_soc_codec_get_drvdata(dai->codec);
+	struct cx2072x_priv *cx2072x = snd_soc_component_get_drvdata(dai->component);
 
 	dev_dbg(cx2072x->dev, "dsp_dai_probe()\n");
 
@@ -2109,7 +2106,7 @@ static int cx2072x_dsp_dai_probe(struct snd_soc_dai *dai)
 #define CX2072X_FORMATS (SNDRV_PCM_FMTBIT_S16_LE \
 			 | SNDRV_PCM_FMTBIT_S24_LE)
 
-static struct snd_soc_dai_driver soc_codec_cx2072x_dai[] = {
+static struct snd_soc_dai_driver soc_component_cx2072x_dai[] = {
 	{ /* playback and capture */
 		.name = "cx2072x-hifi",
 		.id	= CX2072X_DAI_HIFI,
@@ -2155,7 +2152,7 @@ static struct snd_soc_dai_driver soc_codec_cx2072x_dai[] = {
 		},
 	},
 };
-EXPORT_SYMBOL_GPL(soc_codec_cx2072x_dai);
+EXPORT_SYMBOL_GPL(soc_component_cx2072x_dai);
 
 static const struct regmap_config cx2072x_regmap = {
 	.reg_bits = 16,
@@ -2205,9 +2202,9 @@ static int cx2072x_i2c_probe(struct i2c_client *i2c,
 	 */
 	cx2072x->bclk_ratio = 0;
 
-	ret = snd_soc_register_codec(cx2072x->dev, &soc_codec_driver_cx2072x,
-				     soc_codec_cx2072x_dai,
-				     ARRAY_SIZE(soc_codec_cx2072x_dai));
+	ret = snd_soc_register_component(cx2072x->dev, &soc_codec_driver_cx2072x,
+				     soc_component_cx2072x_dai,
+				     ARRAY_SIZE(soc_component_cx2072x_dai));
 	if (ret < 0)
 		dev_err(cx2072x->dev,
 			"Failed to register codec: %d\n", ret);
@@ -2220,7 +2217,7 @@ static int cx2072x_i2c_probe(struct i2c_client *i2c,
 
 static int cx2072x_i2c_remove(struct i2c_client *client)
 {
-	snd_soc_unregister_codec(&client->dev);
+	snd_soc_unregister_component(&client->dev);
 
 	return 0;
 }

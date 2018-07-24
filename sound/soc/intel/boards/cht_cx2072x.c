@@ -108,9 +108,9 @@ static int cht_codec_init(struct snd_soc_pcm_runtime *rtd)
 {
 	int ret;
 	struct snd_soc_card *card = rtd->card;
-	struct snd_soc_codec *codec = rtd->codec;
+	struct snd_soc_component *component = rtd->codec_dai->component;
 
-	if (devm_acpi_dev_add_driver_gpios(codec->dev,
+	if (devm_acpi_dev_add_driver_gpios(component->dev,
 					   acpi_cht_cx2072x_gpios))
 		dev_warn(rtd->dev, "Unable to add GPIO mapping table\n");
 
@@ -132,15 +132,15 @@ static int cht_codec_init(struct snd_soc_pcm_runtime *rtd)
 	if (ret)
 		return ret;
 
-	cht_cx_gpio.gpiod_dev = codec->dev;
-	cht_cx_gpio.data = codec;
+	cht_cx_gpio.gpiod_dev = component->dev;
+	cht_cx_gpio.data = component;
 	ret = snd_soc_jack_add_gpios(&cht_cx_headset, 1, &cht_cx_gpio);
 	if (ret) {
 		dev_err(rtd->dev, "Adding jack GPIO failed\n");
 		return ret;
 	}
 
-	cx2072x_enable_detect(codec);
+	cx2072x_enable_detect(component);
 
 	return ret;
 }
