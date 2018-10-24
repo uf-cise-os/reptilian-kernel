@@ -2,7 +2,37 @@ diff --git a/src/wl/sys/wl_linux.c b/src/wl/sys/wl_linux.c
 index 1270d6da22ba..ec120cf7d74c 100644
 --- a/src/wl/sys/wl_linux.c
 +++ b/src/wl/sys/wl_linux.c
-@@ -2355,9 +2355,13 @@ wl_init_timer(wl_info_t *wl, void (*fn)(void *arg), void *arg, const char *tname
+@@ -93,7 +93,11 @@
+ 
+ #include <wlc_wowl.h>
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
++static void wl_timer(struct timer_list *tl);
++#else
+ static void wl_timer(ulong data);
++#endif
+ static void _wl_timer(wl_timer_t *t);
+ static struct net_device *wl_alloc_linux_if(wl_if_t *wlif);
+ 
+@@ -2300,10 +2304,17 @@
+ 	atomic_dec(&t->wl->callbacks);
+ }
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)
++static void
++wl_timer(struct timer_list *tl)
++{
++	wl_timer_t *t = (wl_timer_t *)tl;
++#else
+ static void
+ wl_timer(ulong data)
+ {
+ 	wl_timer_t *t = (wl_timer_t *)data;
++#endif
+ 
+ 	if (!WL_ALL_PASSIVE_ENAB(t->wl))
+ 		_wl_timer(t);
+@@ -2355,9 +2366,13 @@
  
  	bzero(t, sizeof(wl_timer_t));
  
