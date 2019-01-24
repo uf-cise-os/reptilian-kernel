@@ -2261,10 +2261,6 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
 	memset(&p->se.statistics, 0, sizeof(p->se.statistics));
 #endif
 
-#ifdef CONFIG_CPU_FREQ_TIMES
-	cpufreq_task_times_init(p);
-#endif
-
 	RB_CLEAR_NODE(&p->dl.rb_node);
 	init_dl_task_timer(&p->dl);
 	__dl_clear_params(p);
@@ -4188,8 +4184,8 @@ static int __sched_setscheduler(struct task_struct *p,
 	int queue_flags = DEQUEUE_SAVE | DEQUEUE_MOVE;
 	struct rq *rq;
 
-	/* may grab non-irq protected spin_locks */
-	BUG_ON(in_interrupt());
+	/* The pi code expects interrupts enabled */
+	BUG_ON(pi && in_interrupt());
 recheck:
 	/* double check policy once rq lock held */
 	if (policy < 0) {
