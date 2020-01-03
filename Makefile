@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0
 VERSION = 4
 PATCHLEVEL = 19
-SUBLEVEL = 80
+SUBLEVEL = 91
 EXTRAVERSION =
 NAME = "People's Front"
 
@@ -813,10 +813,24 @@ LDFLAGS_vmlinux += --gc-sections
 endif
 
 ifdef CONFIG_LTO_CLANG
-lto-clang-flags	:= -flto -fvisibility=hidden
+ifdef CONFIG_THINLTO
+lto-clang-flags	:= -flto=thin
+KBUILD_LDFLAGS	+= --thinlto-cache-dir=.thinlto-cache
+else
+lto-clang-flags	:= -flto
+endif
+lto-clang-flags += -fvisibility=default $(call cc-option, -fsplit-lto-unit)
+
+# Limit inlining across translation units to reduce binary size
+LD_FLAGS_LTO_CLANG := -mllvm -import-instr-limit=5
+
+KBUILD_LDFLAGS += $(LD_FLAGS_LTO_CLANG)
+KBUILD_LDFLAGS_MODULE += $(LD_FLAGS_LTO_CLANG)
+
+KBUILD_LDS_MODULE += $(srctree)/scripts/module-lto.lds
 
 # allow disabling only clang LTO where needed
-DISABLE_LTO_CLANG := -fno-lto -fvisibility=default
+DISABLE_LTO_CLANG := -fno-lto
 export DISABLE_LTO_CLANG
 endif
 
@@ -829,7 +843,7 @@ export LTO_CFLAGS DISABLE_LTO
 endif
 
 ifdef CONFIG_CFI_CLANG
-cfi-clang-flags	+= -fsanitize=cfi $(call cc-option, -fsplit-lto-unit)
+cfi-clang-flags	+= -fsanitize=cfi -fno-sanitize-cfi-canonical-jump-tables
 DISABLE_CFI_CLANG := -fno-sanitize=cfi
 ifdef CONFIG_MODULES
 cfi-clang-flags	+= -fsanitize-cfi-cross-dso
@@ -852,6 +866,12 @@ KBUILD_CFLAGS	+= $(CFI_CFLAGS)
 DISABLE_CFI	:= $(DISABLE_CFI_CLANG)
 DISABLE_LTO	+= $(DISABLE_CFI)
 export CFI_CFLAGS DISABLE_CFI
+endif
+
+ifdef CONFIG_SHADOW_CALL_STACK
+CC_FLAGS_SCS	:= -fsanitize=shadow-call-stack
+KBUILD_CFLAGS	+= $(CC_FLAGS_SCS)
+export CC_FLAGS_SCS
 endif
 
 # arch Makefile may override CC so keep this after arch Makefile is included
@@ -901,6 +921,12 @@ KBUILD_CFLAGS   += $(call cc-option,-Werror=designated-init)
 
 # change __FILE__ to the relative path from the srctree
 KBUILD_CFLAGS	+= $(call cc-option,-fmacro-prefix-map=$(srctree)/=)
+
+# ensure -fcf-protection is disabled when using retpoline as it is
+# incompatible with -mindirect-branch=thunk-extern
+ifdef CONFIG_RETPOLINE
+KBUILD_CFLAGS += $(call cc-option,-fcf-protection=none)
+endif
 
 # use the deterministic mode of AR if available
 KBUILD_ARFLAGS := $(call ar-option,D)
@@ -1572,9 +1598,6 @@ else # KBUILD_EXTMOD
 
 # We are always building modules
 KBUILD_MODULES := 1
-PHONY += crmodverdir
-crmodverdir:
-	$(cmd_crmodverdir)
 
 PHONY += $(objtree)/Module.symvers
 $(objtree)/Module.symvers:
@@ -1586,7 +1609,7 @@ $(objtree)/Module.symvers:
 
 module-dirs := $(addprefix _module_,$(KBUILD_EXTMOD))
 PHONY += $(module-dirs) modules
-$(module-dirs): crmodverdir $(objtree)/Module.symvers
+$(module-dirs): prepare $(objtree)/Module.symvers
 	$(Q)$(MAKE) $(build)=$(patsubst _module_%,%,$@)
 
 modules: $(module-dirs)
@@ -1627,7 +1650,8 @@ help:
 
 # Dummies...
 PHONY += prepare scripts
-prepare: ;
+prepare:
+	$(cmd_crmodverdir)
 scripts: ;
 endif # KBUILD_EXTMOD
 
@@ -1755,17 +1779,14 @@ endif
 
 # Modules
 /: prepare scripts FORCE
-	$(cmd_crmodverdir)
 	$(Q)$(MAKE) KBUILD_MODULES=$(if $(CONFIG_MODULES),1) \
 	$(build)=$(build-dir)
 # Make sure the latest headers are built for Documentation
 Documentation/ samples/: headers_install
 %/: prepare scripts FORCE
-	$(cmd_crmodverdir)
 	$(Q)$(MAKE) KBUILD_MODULES=$(if $(CONFIG_MODULES),1) \
 	$(build)=$(build-dir)
 %.ko: prepare scripts FORCE
-	$(cmd_crmodverdir)
 	$(Q)$(MAKE) KBUILD_MODULES=$(if $(CONFIG_MODULES),1)   \
 	$(build)=$(build-dir) $(@:.ko=.o)
 	$(Q)$(MAKE) -f $(srctree)/scripts/Makefile.modpost
