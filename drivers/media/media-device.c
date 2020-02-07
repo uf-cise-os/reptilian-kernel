@@ -60,7 +60,7 @@ static int media_device_close(struct file *filp)
 
 static long media_device_get_info(struct media_device *dev, void *arg)
 {
-	struct media_device_info *info = (struct media_device_info *)arg;
+	struct media_device_info *info = arg;
 
 	memset(info, 0, sizeof(*info));
 
@@ -100,7 +100,7 @@ static struct media_entity *find_entity(struct media_device *mdev, u32 id)
 
 static long media_device_enum_entities(struct media_device *mdev, void *arg)
 {
-	struct media_entity_desc *entd = (struct media_entity_desc *)arg;
+	struct media_entity_desc *entd = arg;
 	struct media_entity *ent;
 
 	ent = find_entity(mdev, entd->id);
@@ -153,7 +153,7 @@ static void media_device_kpad_to_upad(const struct media_pad *kpad,
 
 static long media_device_enum_links(struct media_device *mdev, void *arg)
 {
-	struct media_links_enum *links = (struct media_links_enum *)arg;
+	struct media_links_enum *links = arg;
 	struct media_entity *entity;
 
 	entity = find_entity(mdev, links->entity);
@@ -201,7 +201,7 @@ static long media_device_enum_links(struct media_device *mdev, void *arg)
 
 static long media_device_setup_link(struct media_device *mdev, void *arg)
 {
-	struct media_link_desc *linkd = (struct media_link_desc *)arg;
+	struct media_link_desc *linkd = arg;
 	struct media_link *link = NULL;
 	struct media_entity *source;
 	struct media_entity *sink;
@@ -229,7 +229,7 @@ static long media_device_setup_link(struct media_device *mdev, void *arg)
 
 static long media_device_get_topology(struct media_device *mdev, void *arg)
 {
-	struct media_v2_topology *topo = (struct media_v2_topology *)arg;
+	struct media_v2_topology *topo = arg;
 	struct media_entity *entity;
 	struct media_interface *intf;
 	struct media_pad *pad;
@@ -474,6 +474,7 @@ static long media_device_enum_links32(struct media_device *mdev,
 {
 	struct media_links_enum links;
 	compat_uptr_t pads_ptr, links_ptr;
+	int ret;
 
 	memset(&links, 0, sizeof(links));
 
@@ -485,7 +486,14 @@ static long media_device_enum_links32(struct media_device *mdev,
 	links.pads = compat_ptr(pads_ptr);
 	links.links = compat_ptr(links_ptr);
 
-	return media_device_enum_links(mdev, &links);
+	ret = media_device_enum_links(mdev, &links);
+	if (ret)
+		return ret;
+
+	if (copy_to_user(ulinks->reserved, links.reserved,
+			 sizeof(ulinks->reserved)))
+		return -EFAULT;
+	return 0;
 }
 
 #define MEDIA_IOC_ENUM_LINKS32		_IOWR('|', 0x02, struct media_links_enum32)
