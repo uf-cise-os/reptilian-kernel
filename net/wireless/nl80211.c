@@ -323,6 +323,7 @@ static const struct nla_policy nl80211_policy[NUM_NL80211_ATTR] = {
 	[NL80211_ATTR_CONTROL_PORT_NO_ENCRYPT] = { .type = NLA_FLAG },
 	[NL80211_ATTR_CONTROL_PORT_OVER_NL80211] = { .type = NLA_FLAG },
 	[NL80211_ATTR_PRIVACY] = { .type = NLA_FLAG },
+	[NL80211_ATTR_STATUS_CODE] = { .type = NLA_U16 },
 	[NL80211_ATTR_CIPHER_SUITE_GROUP] = { .type = NLA_U32 },
 	[NL80211_ATTR_WPA_VERSIONS] = { .type = NLA_U32 },
 	[NL80211_ATTR_PID] = { .type = NLA_U32 },
@@ -16066,6 +16067,16 @@ void cfg80211_crit_proto_stopped(struct wireless_dev *wdev, gfp_t gfp)
 	nlmsg_free(msg);
 }
 EXPORT_SYMBOL(cfg80211_crit_proto_stopped);
+
+void cfg80211_ap_stopped(struct net_device *netdev, gfp_t gfp)
+{
+	struct wireless_dev *wdev = netdev->ieee80211_ptr;
+	struct cfg80211_registered_device *rdev = wiphy_to_rdev(wdev->wiphy);
+
+	nl80211_send_mlme_event(rdev, netdev, NULL, 0,
+				NL80211_CMD_STOP_AP, gfp, -1);
+}
+EXPORT_SYMBOL(cfg80211_ap_stopped);
 
 void nl80211_send_ap_stopped(struct wireless_dev *wdev)
 {
