@@ -1893,8 +1893,6 @@ static void cx2072x_remove(struct snd_soc_component *component)
 {
 	/*power off device*/
 	snd_soc_component_force_bias_level(component, SND_SOC_BIAS_OFF);
-
-	return 0;
 }
 
 static bool cx2072x_readable_register(struct device *dev, unsigned int reg)
